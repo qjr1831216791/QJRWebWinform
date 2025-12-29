@@ -19,14 +19,6 @@
               获取系统信息
             </button>
 
-            <button @click="processData" class="btn btn-primary">
-              处理数据
-            </button>
-
-            <button @click="saveData" class="btn btn-primary">
-              保存数据（异步）
-            </button>
-
             <button @click="setWindowTitle" class="btn btn-secondary">
               设置窗口标题
             </button>
@@ -69,8 +61,14 @@ export default {
     showMessage() {
       if (this.checkNativeHost()) {
         try {
-          window.nativeHost.showMessage('这是一条来自前端的消息！')
-          this.result = '已调用 showMessage 方法'
+          const params = JSON.stringify({ message: '这是一条来自前端的消息！', title: '测试消息' })
+          const result = JSON.parse(window.nativeHost.executeCommand('System/ShowMessage', params))
+
+          if (result.success) {
+            this.result = '已调用 System/ShowMessage'
+          } else {
+            this.result = `错误: ${result.error}`
+          }
         } catch (error) {
           this.result = `错误: ${error.message}`
         }
@@ -81,42 +79,14 @@ export default {
     getSystemInfo() {
       if (this.checkNativeHost()) {
         try {
-          const info = window.nativeHost.getSystemInfo()
-          this.result = info
-        } catch (error) {
-          this.result = `错误: ${error.message}`
-        }
-      }
-    },
+          const result = JSON.parse(window.nativeHost.executeCommand('System/GetSystemInfo'))
 
-    // 处理数据
-    processData() {
-      if (this.checkNativeHost()) {
-        try {
-          const input = 'Hello from Vue!'
-          const output = window.nativeHost.processData(input)
-          this.result = `输入: ${input}\n输出: ${output}`
-        } catch (error) {
-          this.result = `错误: ${error.message}`
-        }
-      }
-    },
-
-    // 保存数据（异步）
-    saveData() {
-      if (this.checkNativeHost()) {
-        try {
-          const testData = JSON.stringify({ name: '测试数据', timestamp: new Date().toISOString() })
-
-          window.nativeHost.saveData(testData, (success, message) => {
-            if (success) {
-              this.result = `保存成功: ${message}`
-            } else {
-              this.result = `保存失败: ${message}`
-            }
-          })
-
-          this.result = '正在保存数据...'
+          if (result.success) {
+            const info = result.data
+            this.result = `操作系统: ${info.osVersion}\n.NET 版本: ${info.dotNetVersion}\n计算机名: ${info.machineName}\n用户名: ${info.userName}\n处理器数: ${info.processorCount}`
+          } else {
+            this.result = `错误: ${result.error}`
+          }
         } catch (error) {
           this.result = `错误: ${error.message}`
         }
@@ -128,8 +98,14 @@ export default {
       if (this.checkNativeHost()) {
         try {
           const newTitle = `QJR Web Winform - ${new Date().toLocaleTimeString()}`
-          window.nativeHost.setWindowTitle(newTitle)
-          this.result = `窗口标题已设置为: ${newTitle}`
+          const params = JSON.stringify({ title: newTitle })
+          const result = JSON.parse(window.nativeHost.executeCommand('Window/SetTitle', params))
+
+          if (result.success) {
+            this.result = `窗口标题已设置为: ${result.data.title}`
+          } else {
+            this.result = `错误: ${result.error}`
+          }
         } catch (error) {
           this.result = `错误: ${error.message}`
         }
@@ -141,7 +117,13 @@ export default {
       if (this.checkNativeHost()) {
         if (confirm('确定要关闭窗口吗？')) {
           try {
-            window.nativeHost.closeWindow()
+            const result = JSON.parse(window.nativeHost.executeCommand('Window/Close'))
+
+            if (result.success) {
+              this.result = '窗口关闭命令已执行'
+            } else {
+              this.result = `错误: ${result.error}`
+            }
           } catch (error) {
             this.result = `错误: ${error.message}`
           }
@@ -155,8 +137,8 @@ export default {
         this.result = '错误: NativeHost 未初始化，请等待页面加载完成'
         return false
       }
-      // 检查是否有实际的方法（CefSharp 绑定后会有方法，使用 camelCase）
-      if (typeof window.nativeHost.showMessage !== 'function') {
+      // 检查是否有 executeCommand 方法（统一入口）
+      if (typeof window.nativeHost.executeCommand !== 'function') {
         this.result = `错误: NativeHost 方法不可用\n可用方法: ${Object.keys(window.nativeHost || {}).join(', ')}`
         return false
       }

@@ -43,10 +43,10 @@ function waitForNativeHost(callback, maxAttempts = 150) {
       return
     }
 
-    // 检查 nativeHost 是否可用（检查是否有方法，注意使用 camelCase）
+    // 检查 nativeHost 是否可用（检查是否有 executeCommand 方法，统一入口）
     if (typeof window.nativeHost !== 'undefined' &&
       window.nativeHost &&
-      typeof window.nativeHost.showMessage === 'function') {
+      typeof window.nativeHost.executeCommand === 'function') {
       if (!isReady) {
         isReady = true
         callback()

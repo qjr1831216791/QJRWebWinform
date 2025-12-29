@@ -1,12 +1,16 @@
 using System;
+using System.Linq;
 using System.Windows;
 using CefSharp;
+using QJRWebWinform.WPF.Controllers;
+using Newtonsoft.Json;
 
 namespace QJRWebWinform.WPF
 {
     /// <summary>
     /// 暴露给 JavaScript 的 C# 对象
     /// 前端可以通过 window.nativeHost 访问这些方法
+    /// 使用 Controller/Action 路由模式，类似 WebAPI
     /// </summary>
     public class NativeHost
     {
@@ -15,75 +19,126 @@ namespace QJRWebWinform.WPF
         public NativeHost(Window mainWindow)
         {
             _mainWindow = mainWindow ?? throw new ArgumentNullException(nameof(mainWindow));
+            
+            // 注册所有 Controller
+            RegisterControllers();
         }
 
         /// <summary>
-        /// 示例方法：显示消息框
+        /// 注册所有可用的 Controller
         /// </summary>
-        public void ShowMessage(string message)
+        private void RegisterControllers()
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            ControllerRegistry.RegisterRange(new IController[]
             {
-                MessageBox.Show(message, "来自后端", MessageBoxButton.OK, MessageBoxImage.Information);
+                new SystemController(_mainWindow),
+                new WindowController(_mainWindow),
             });
         }
 
         /// <summary>
-        /// 示例方法：获取系统信息
+        /// 统一命令执行入口（同步）
+        /// 前端调用：window.nativeHost.executeCommand('ControllerName/ActionName', { param1: 'value1' })
+        /// 示例：window.nativeHost.executeCommand('System/GetSystemInfo')
         /// </summary>
-        public string GetSystemInfo()
-        {
-            return $"操作系统: {Environment.OSVersion}\n.NET 版本: {Environment.Version}";
-        }
-
-        /// <summary>
-        /// 示例方法：处理数据并返回结果
-        /// </summary>
-        public string ProcessData(string input)
-        {
-            // 模拟业务逻辑处理
-            return $"处理后的数据: {input.ToUpper()}";
-        }
-
-        /// <summary>
-        /// 示例方法：保存数据（异步操作示例）
-        /// </summary>
-        public void SaveData(string data, IJavascriptCallback callback)
+        /// <param name="route">路由，格式：ControllerName/ActionName</param>
+        /// <param name="parameters">命令参数（JSON 字符串）</param>
+        /// <returns>执行结果（JSON 字符串）</returns>
+        public string ExecuteCommand(string route, string parameters = null)
         {
             try
             {
-                // 模拟保存操作
-                System.Threading.Thread.Sleep(500);
+                var (controllerName, actionName) = ParseRoute(route);
                 
-                // 调用 JavaScript 回调函数
-                callback.ExecuteAsync(true, "数据保存成功");
+                var controller = ControllerRegistry.GetController(controllerName);
+                if (controller == null)
+                {
+                    throw new ArgumentException($"Controller '{controllerName}' 不存在");
+                }
+
+                var result = controller.ExecuteAction(actionName, parameters);
+                return JsonConvert.SerializeObject(new
+                {
+                    success = true,
+                    data = result
+                });
             }
             catch (Exception ex)
             {
-                callback.ExecuteAsync(false, $"保存失败: {ex.Message}");
+                return JsonConvert.SerializeObject(new
+                {
+                    success = false,
+                    error = ex.Message
+                });
             }
         }
 
         /// <summary>
-        /// 示例方法：关闭窗口
+        /// 统一命令执行入口（异步）
+        /// 前端调用：window.nativeHost.executeCommandAsync('ControllerName/ActionName', { param1: 'value1' }, callback)
+        /// 示例：window.nativeHost.executeCommandAsync('Data/Save', { data: '...' }, callback)
         /// </summary>
-        public void CloseWindow()
+        /// <param name="route">路由，格式：ControllerName/ActionName</param>
+        /// <param name="parameters">命令参数（JSON 字符串）</param>
+        /// <param name="callback">JavaScript 回调函数</param>
+        public void ExecuteCommandAsync(string route, string parameters, IJavascriptCallback callback)
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            try
             {
-                _mainWindow.Close();
-            });
+                var (controllerName, actionName) = ParseRoute(route);
+                
+                var controller = ControllerRegistry.GetController(controllerName);
+                if (controller == null)
+                {
+                    callback.ExecuteAsync(false, $"Controller '{controllerName}' 不存在");
+                    return;
+                }
+
+                controller.ExecuteActionAsync(actionName, parameters, callback);
+            }
+            catch (Exception ex)
+            {
+                callback.ExecuteAsync(false, ex.Message);
+            }
         }
 
         /// <summary>
-        /// 示例方法：设置窗口标题
+        /// 解析路由：ControllerName/ActionName
         /// </summary>
-        public void SetWindowTitle(string title)
+        private (string controllerName, string actionName) ParseRoute(string route)
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            if (string.IsNullOrWhiteSpace(route))
             {
-                _mainWindow.Title = title;
+                throw new ArgumentException("路由不能为空");
+            }
+
+            var parts = route.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length != 2)
+            {
+                throw new ArgumentException($"路由格式错误，应为 'ControllerName/ActionName'，实际为: {route}");
+            }
+
+            return (parts[0].Trim(), parts[1].Trim());
+        }
+
+        /// <summary>
+        /// 获取所有可用的 Controller 和 Action 列表（用于调试）
+        /// </summary>
+        public string GetAvailableCommands()
+        {
+            var controllers = ControllerRegistry.GetAllControllerNames();
+            var result = controllers.Select(controllerName =>
+            {
+                var controller = ControllerRegistry.GetController(controllerName);
+                var actions = controller?.GetAvailableActions() ?? new string[0];
+                return new
+                {
+                    controller = controllerName,
+                    actions = actions.Select(action => $"{controllerName}/{action}").ToArray()
+                };
             });
+
+            return JsonConvert.SerializeObject(result);
         }
     }
 }

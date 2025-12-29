@@ -69,6 +69,11 @@
       <SubType>code</SubType>
     </Compile>
     <Compile Include="NativeHost.cs" />
+    <Compile Include="Controllers\IController.cs" />
+    <Compile Include="Controllers\ControllerBase.cs" />
+    <Compile Include="Controllers\ControllerRegistry.cs" />
+    <Compile Include="Controllers\SystemController.cs" />
+    <Compile Include="Controllers\WindowController.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">
@@ -108,11 +113,7 @@
       <WwwrootFiles Include="$(ProjectDir)wwwroot\**\*" />
     </ItemGroup>
     <Message Text="Copying wwwroot files to output directory..." Importance="normal" />
-    <Copy SourceFiles="@(WwwrootFiles)" 
-          DestinationFiles="@(WwwrootFiles->'$(OutDir)wwwroot\%(RecursiveDir)%(Filename)%(Extension)')" 
-          SkipUnchangedFiles="true"
-          ContinueOnError="true" />
-    <Message Text="Copied @(WwwrootFiles->Count()) files from wwwroot" Importance="normal" />
+    <Copy SourceFiles="@(WwwrootFiles)" DestinationFiles="@(WwwrootFiles->'$(OutDir)wwwroot\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" ContinueOnError="true" />
+    <Message Text="Copied @(WwwrootFiles-&gt;Count()) files from wwwroot" Importance="normal" />
   </Target>
 </Project>
-
