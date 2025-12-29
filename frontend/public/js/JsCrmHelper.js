@@ -196,34 +196,274 @@ JsCrm.webApi = {
         })
     },
 
-    invokeHiddenApiAsync: function (hostWorkflow, apiName, actionPara) {
-        return this.invokeHiddenApi(hostWorkflow, apiName, actionPara);
+    /**
+     * 检测应该使用哪种 API 调用模式
+     * @returns {string} 'webapi' | 'nativehost'
+     */
+    _getApiMode: function () {
+        if (!context || !context.envconfig) {
+            return 'webapi'; // 默认使用 WebAPI
+        }
+
+        const config = context.envconfig;
+        const apiMode = config.API_MODE || 'auto';
+        const forceNativeHost = config.FORCE_NATIVE_HOST === true;
+
+        // 如果强制使用 NativeHost，直接返回
+        if (forceNativeHost) {
+            if (typeof window !== 'undefined' && window.nativeHost && typeof window.nativeHost.executeCommand === 'function') {
+                return 'nativehost';
+            } else {
+                console.warn('配置要求使用 NativeHost，但 NativeHost 不可用，将尝试使用 WebAPI');
+                return 'webapi';
+            }
+        }
+
+        // 如果明确指定模式，直接返回
+        if (apiMode === 'webapi') {
+            return 'webapi';
+        }
+        if (apiMode === 'nativehost') {
+            if (typeof window !== 'undefined' && window.nativeHost && typeof window.nativeHost.executeCommand === 'function') {
+                return 'nativehost';
+            } else {
+                console.warn('配置要求使用 NativeHost，但 NativeHost 不可用，将降级使用 WebAPI');
+                return 'webapi';
+            }
+        }
+
+        // 自动检测模式：如果 NativeHost 可用则使用，否则使用 WebAPI
+        if (apiMode === 'auto') {
+            if (typeof window !== 'undefined' && window.nativeHost && typeof window.nativeHost.executeCommand === 'function') {
+                return 'nativehost';
+            } else {
+                return 'webapi';
+            }
+        }
+
+        // 默认使用 WebAPI
+        return 'webapi';
+    },
+
+    /**
+     * 通过 NativeHost 调用 API（同步）
+     * @param {string} apiName - Controller/Action 格式的路由
+     * @param {object|string} actionPara - 参数对象或 JSON 字符串
+     * @returns {object} 响应结果
+     */
+    _invokeViaNativeHost: function (apiName, actionPara) {
+        if (typeof window === 'undefined' || !window.nativeHost || typeof window.nativeHost.executeCommand !== 'function') {
+            throw new Error('NativeHost 不可用，无法执行调用');
+        }
+
+        // 准备参数
+        let parametersJson = null;
+        if (actionPara !== null && actionPara !== undefined) {
+            if (typeof actionPara === 'string') {
+                parametersJson = actionPara;
+            } else {
+                parametersJson = JSON.stringify(actionPara);
+            }
+        }
+
+        // 调用 NativeHost
+        try {
+            const resultJson = window.nativeHost.executeCommand(apiName, parametersJson);
+            if (!resultJson) {
+                throw new Error('NativeHost 返回空结果');
+            }
+
+            const result = JSON.parse(resultJson);
+            
+            // 检查调用是否成功
+            if (!result.success) {
+                throw new Error(result.error || 'NativeHost 调用失败');
+            }
+
+            // 转换返回格式，使其与 WebAPI 格式兼容
+            // WebAPI 返回格式: { isSuccess: true, data: {...}, message: '...' }
+            // NativeHost 返回格式: { success: true, data: {...} }
+            return {
+                isSuccess: true,
+                data: result.data,
+                message: result.message || '调用成功'
+            };
+        } catch (error) {
+            console.error('NativeHost 调用失败:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * 通过 NativeHost 调用 API（异步）
+     * @param {string} apiName - Controller/Action 格式的路由
+     * @param {object|string} actionPara - 参数对象或 JSON 字符串
+     * @returns {Promise<object>} 响应结果
+     */
+    _invokeViaNativeHostAsync: function (apiName, actionPara) {
+        return new Promise((resolve, reject) => {
+            if (typeof window === 'undefined' || !window.nativeHost || typeof window.nativeHost.executeCommandAsync !== 'function') {
+                reject(new Error('NativeHost 不可用，无法执行异步调用'));
+                return;
+            }
+
+            // 准备参数
+            let parametersJson = null;
+            if (actionPara !== null && actionPara !== undefined) {
+                if (typeof actionPara === 'string') {
+                    parametersJson = actionPara;
+                } else {
+                    parametersJson = JSON.stringify(actionPara);
+                }
+            }
+
+            // 调用 NativeHost（异步）
+            try {
+                window.nativeHost.executeCommandAsync(apiName, parametersJson, function (success, resultOrError) {
+                    if (success) {
+                        try {
+                            // resultOrError 可能是 JSON 字符串或已解析的对象
+                            let parsedResult;
+                            if (typeof resultOrError === 'string') {
+                                // 尝试解析 JSON 字符串
+                                try {
+                                    parsedResult = JSON.parse(resultOrError);
+                                } catch (parseError) {
+                                    // 如果不是 JSON，可能是普通字符串
+                                    parsedResult = { data: resultOrError };
+                                }
+                            } else if (typeof resultOrError === 'object' && resultOrError !== null) {
+                                parsedResult = resultOrError;
+                            } else {
+                                parsedResult = { data: resultOrError };
+                            }
+
+                            // 转换返回格式，使其与 WebAPI 格式兼容
+                            // WebAPI 返回格式: { isSuccess: true, data: {...}, message: '...' }
+                            // NativeHost 返回格式可能是: { success: true, data: {...} } 或直接是数据对象
+                            if (parsedResult.success !== undefined) {
+                                // 标准格式：{ success: true, data: {...} }
+                                resolve({
+                                    isSuccess: true,
+                                    data: parsedResult.data,
+                                    message: parsedResult.message || '调用成功'
+                                });
+                            } else if (parsedResult.data !== undefined) {
+                                // 有 data 字段
+                                resolve({
+                                    isSuccess: true,
+                                    data: parsedResult.data,
+                                    message: parsedResult.message || '调用成功'
+                                });
+                            } else {
+                                // 直接是数据对象
+                                resolve({
+                                    isSuccess: true,
+                                    data: parsedResult,
+                                    message: '调用成功'
+                                });
+                            }
+                        } catch (parseError) {
+                            console.error('解析 NativeHost 返回结果失败:', parseError);
+                            reject(new Error('解析返回结果失败: ' + parseError.message));
+                        }
+                    } else {
+                        // 失败时，resultOrError 是错误消息字符串
+                        const errorMessage = typeof resultOrError === 'string' ? resultOrError : 'NativeHost 调用失败';
+                        reject(new Error(errorMessage));
+                    }
+                });
+            } catch (error) {
+                console.error('NativeHost 异步调用失败:', error);
+                reject(error);
+            }
+        });
+    },
+
+    /**
+     * 通过 WebAPI 调用（原有实现）
+     * @param {string} apiName - API 名称
+     * @param {object|string} actionPara - 参数对象或 JSON 字符串
+     * @returns {Promise<object>} 响应结果
+     */
+    _invokeViaWebApi: async function (apiName, actionPara) {
+        let isDataSubmit = true;
+        if (typeof (actionPara) === 'string') {
+            isDataSubmit = false;
+            if (this.isJson(actionPara)) {
+                actionPara = JSON.parse(actionPara);
+            }
+        }
+        var resp = await this.ApiPost(apiName, actionPara, isDataSubmit);
+        if (resp) {
+            if (resp && resp.isSuccess) {
+                return resp;
+            } else if (resp && !resp.isSuccess) {
+                if (resp.message) {
+                    console.error(resp.message);
+                }
+                throw new Error(resp.message);
+            } else {
+                throw new Error('HiddenApi response error.');
+            }
+        }
+        throw new Error('HiddenApi response error.');
+    },
+
+    invokeHiddenApiAsync: async function (hostWorkflow, apiName, actionPara) {
+        try {
+            // 检测应该使用哪种调用模式
+            const apiMode = this._getApiMode();
+
+            if (apiMode === 'nativehost') {
+                // 使用 NativeHost 异步调用
+                try {
+                    const result = await this._invokeViaNativeHostAsync(apiName, actionPara);
+                    return result;
+                } catch (error) {
+                    // 如果 NativeHost 调用失败，且不是强制模式，尝试降级到 WebAPI
+                    const config = context && context.envconfig ? context.envconfig : {};
+                    if (!config.FORCE_NATIVE_HOST) {
+                        console.warn('NativeHost 异步调用失败，降级使用 WebAPI:', error.message);
+                        return await this._invokeViaWebApi(apiName, actionPara);
+                    } else {
+                        throw error;
+                    }
+                }
+            } else {
+                // 使用 WebAPI 调用
+                return await this._invokeViaWebApi(apiName, actionPara);
+            }
+        } catch (e) {
+            throw e;
+        }
     },
 
     invokeHiddenApi: async function (hostWorkflow, apiName, actionPara) {
         try {
-            let isDataSubmit = true;
-            if (typeof (actionPara) === 'string') {
-                isDataSubmit = false;
-                if (this.isJson(actionPara)) {
-                    actionPara = JSON.parse(actionPara);
-                }
-            }
-            var resp = await this.ApiPost(apiName, actionPara, isDataSubmit);
-            if (resp) {
-                if (resp && resp.isSuccess) {
-                    return resp;
-                } else if (resp && !resp.isSuccess) {
-                    if (resp.message) {
-                        console.error(resp.message);
+            // 检测应该使用哪种调用模式
+            const apiMode = this._getApiMode();
+
+            if (apiMode === 'nativehost') {
+                // 使用 NativeHost 调用（同步方式，但包装为 Promise）
+                try {
+                    const result = this._invokeViaNativeHost(apiName, actionPara);
+                    return result;
+                } catch (error) {
+                    // 如果 NativeHost 调用失败，且不是强制模式，尝试降级到 WebAPI
+                    const config = context && context.envconfig ? context.envconfig : {};
+                    if (!config.FORCE_NATIVE_HOST) {
+                        console.warn('NativeHost 调用失败，降级使用 WebAPI:', error.message);
+                        return await this._invokeViaWebApi(apiName, actionPara);
+                    } else {
+                        throw error;
                     }
-                    throw new Error(resp.message);
-                } else {
-                    throw new Error('HiddenApi response error.');
                 }
+            } else {
+                // 使用 WebAPI 调用
+                return await this._invokeViaWebApi(apiName, actionPara);
             }
-        }
-        catch (e) {
+        } catch (e) {
             throw e;
         }
     },
