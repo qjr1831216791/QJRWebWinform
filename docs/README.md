@@ -364,12 +364,34 @@ npm run build
 
 ---
 
-## 📦 部署
+## 📦 部署和发布
+
+### 快速发布（推荐）
+
+使用自动化脚本一键发布：
+
+```powershell
+# 构建并打包发布版本
+.\scripts\build-release.ps1 -Version "1.0.0"
+.\scripts\package-release.ps1 -Version "1.0.0"
+```
+
+### 详细发布指南
+
+请参考 **[生产版本发布指南](./生产版本发布指南.md)**，包含：
+- 完整的发布流程
+- 手动发布步骤
+- 发布检查清单
+- 常见问题解答
 
 ### 发布准备
 
 1. **构建生产版本**:
 ```powershell
+# 方式1: 使用脚本（推荐）
+.\scripts\build-release.ps1
+
+# 方式2: 手动构建
 # 构建前端
 cd frontend
 npm run build
@@ -378,9 +400,14 @@ npm run build
 # 在 Visual Studio 中生成 Release 版本
 ```
 
+```powershell
+powershell -File .\scripts\build-release.ps1 -Version "1.0.0"
+powershell -File .\scripts\package-release.ps1 -Version "1.0.0"
+```
+
 2. **检查输出文件**:
-   - 可执行文件: `QJRWebWinform.WPF.exe`
-   - 前端文件: `wwwroot/` 目录
+   - 可执行文件: `src/QJRWebWinform.WPF/bin/Release/QJRWebWinform.WPF.exe`
+   - 前端文件: `src/QJRWebWinform.WPF/bin/Release/wwwroot/` 目录
    - 依赖 DLL: CefSharp 相关文件
 
 ### 部署清单
