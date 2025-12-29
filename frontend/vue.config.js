@@ -36,10 +36,16 @@ module.exports = {
 
   // 链式操作 webpack 配置
   chainWebpack: config => {
+    // 禁用 ESLint loader
+    config.module.rules.delete('eslint')
+    
     // 生产环境优化
     if (process.env.NODE_ENV === 'production') {
       config.optimization.minimize(true)
     }
-  }
+  },
+  
+  // 禁用 ESLint
+  lintOnSave: false
 }
 

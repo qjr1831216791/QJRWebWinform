@@ -1,0 +1,102 @@
+{
+    "HBXN": [
+        {
+            "logicalName": "businessunit",
+            "displayName": "业务部门",
+            "nameField": "name",
+            "parentField": "parentbusinessunitid",
+            "customFields": [
+                {
+                    "logicalName": "name",
+                    "displayName": "名称",
+                    "isShow": true
+                },
+                {
+                    "logicalName": "address1_telephone1",
+                    "displayName": "主要电话"
+                },
+                {
+                    "logicalName": "divisionname",
+                    "displayName": "部门"
+                },
+                {
+                    "logicalName": "websiteurl",
+                    "displayName": "网站"
+                },
+                {
+                    "logicalName": "parentbusinessunitid",
+                    "displayName": "上级部门"
+                },
+                {
+                    "logicalName": "emailaddress",
+                    "displayName": "电子邮件"
+                },
+                {
+                    "logicalName": "new_type",
+                    "displayName": "部门类型"
+                },
+                {
+                    "logicalName": "new_department_code",
+                    "displayName": "编码"
+                },
+                {
+                    "logicalName": "new_kingdeecode",
+                    "displayName": "金蝶编码"
+                },
+                {
+                    "logicalName": "new_hly_code",
+                    "displayName": "汇联易编码"
+                },
+                {
+                    "logicalName": "new_howrebates",
+                    "displayName": "返利/临时激励使用方式"
+                },
+                {
+                    "logicalName": "new_subdivision",
+                    "displayName": "所属事业部"
+                }
+            ]
+        }
+    ],
+    "KZJM": [],
+    "NPT": [],
+    "Ecoflow": [
+        {
+            "logicalName": "businessunit",
+            "displayName": "业务部门",
+            "nameField": "name",
+            "parentField": "parentbusinessunitid",
+            "customFields": [
+                {
+                    "logicalName": "name",
+                    "displayName": "名称",
+                    "isShow": true
+                },
+                {
+                    "logicalName": "address1_telephone1",
+                    "displayName": "主要电话"
+                },
+                {
+                    "logicalName": "divisionname",
+                    "displayName": "部门"
+                },
+                {
+                    "logicalName": "websiteurl",
+                    "displayName": "网站"
+                },
+                {
+                    "logicalName": "parentbusinessunitid",
+                    "displayName": "上级部门"
+                },
+                {
+                    "logicalName": "emailaddress",
+                    "displayName": "电子邮件"
+                },
+                {
+                    "logicalName": "new_territory_id",
+                    "displayName": "销售区域"
+                }
+            ]
+        }
+    ]
+}

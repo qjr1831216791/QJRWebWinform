@@ -1,0 +1,38 @@
+{
+    "HBXN": [
+        {
+            "logicalName": "new_jobnumber",
+            "displayName": "工号",
+            "width": 180
+        },
+        {
+            "logicalName": "new_dd_userid",
+            "displayName": "钉钉用户id",
+            "width": 180
+        }
+    ],
+    "KZJM": [],
+    "NPT": [],
+    "Ecoflow": [
+        {
+            "logicalName": "new_jobnumber",
+            "displayName": "工号",
+            "width": 180
+        },
+        {
+            "logicalName": "new_wechatqy_openid",
+            "displayName": "企业微信账号",
+            "width": 180
+        },
+        {
+            "logicalName": "new_bpm_empno",
+            "displayName": "BPM ID",
+            "width": 180
+        },
+        {
+            "logicalName": "new_feishuno",
+            "displayName": "飞书ID",
+            "width": 180
+        }
+    ]
+}

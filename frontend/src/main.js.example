@@ -1,0 +1,96 @@
+// 这是迁移后的 main.js 示例文件
+// 整合了 VueWebProj 的依赖和 QJRWebWinform 的 NativeHost 等待逻辑
+
+import Vue from 'vue'
+import App from './App'
+import router from './router'
+import ElementUI from 'element-ui'
+import 'element-ui/lib/theme-chalk/index.css'
+import axios from 'axios'
+import { rtcrm } from "../public/js/rtcrm.min.js"
+import { jshelper } from "../public/js/JsCrmHelper.js"
+import { WebConfig } from "../public/config/WebConfig.js"
+import * as echarts from 'echarts'
+
+// 设置全局属性（来自 VueWebProj）
+Vue.prototype.$echarts = echarts
+Vue.prototype.axios = axios
+Vue.prototype.rtcrm = rtcrm // 公共脚本
+Vue.prototype.jshelper = jshelper // 公共脚本
+Vue.prototype.envconfig = WebConfig // 全局环境配置
+Vue.prototype.$globalVar = {} // 全局变量
+
+// 注册 Element UI
+Vue.use(ElementUI)
+Vue.config.productionTip = false
+
+// 等待 CefSharp NativeHost 初始化完成（来自 QJRWebWinform）
+function waitForNativeHost(callback, maxAttempts = 150) {
+  let attempts = 0
+  let isReady = false
+
+  // 监听 nativeHostReady 事件
+  window.nativeHostReady = function () {
+    if (!isReady) {
+      isReady = true
+      callback()
+    }
+  }
+
+  // 监听自定义事件
+  window.addEventListener('nativeHostReady', function () {
+    if (!isReady) {
+      isReady = true
+      callback()
+    }
+  })
+
+  // 检查全局标志（如果后端已经设置）
+  if (window.__nativeHostReady) {
+    isReady = true
+    callback()
+    return
+  }
+
+  const checkNativeHost = () => {
+    attempts++
+
+    // 检查全局标志
+    if (window.__nativeHostReady) {
+      if (!isReady) {
+        isReady = true
+        callback()
+      }
+      return
+    }
+
+    // 检查 nativeHost 是否可用（检查是否有 executeCommand 方法，统一入口）
+    if (typeof window.nativeHost !== 'undefined' &&
+      window.nativeHost &&
+      typeof window.nativeHost.executeCommand === 'function') {
+      if (!isReady) {
+        isReady = true
+        callback()
+      }
+    } else if (attempts < maxAttempts) {
+      setTimeout(checkNativeHost, 100)
+    } else {
+      // 超时后继续运行（可能 NativeHost 还未准备好，但不影响应用启动）
+      // 注意：如果应用依赖 NativeHost，这里可能需要显示错误提示
+      console.warn('NativeHost 初始化超时，某些功能可能不可用')
+      callback()
+    }
+  }
+
+  // 延迟一小段时间再开始轮询，给后端一些时间完成注册
+  setTimeout(checkNativeHost, 200)
+}
+
+// 初始化 Vue 应用
+waitForNativeHost(() => {
+  new Vue({
+    router,
+    render: h => h(App)
+  }).$mount('#app')
+})
+

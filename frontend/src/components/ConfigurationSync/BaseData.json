@@ -1,0 +1,70 @@
+{
+    "tabs": [
+        {
+            "label": "系统参数",
+            "entityName": "new_systemparameter",
+            "closable": false,
+            "isSysConfig": true
+        },
+        {
+            "label": "自动编号",
+            "entityName": "new_autonumber",
+            "closable": false,
+            "isSysConfig": true
+        },
+        {
+            "label": "明细汇总",
+            "entityName": "new_sumrelationshipdetail",
+            "closable": false,
+            "isSysConfig": true
+        },
+        {
+            "label": "自定义按钮",
+            "entityName": "new_ribbon",
+            "closable": false,
+            "isSysConfig": true
+        },
+        {
+            "label": "重复记录检测",
+            "entityName": "new_duplicatedetect",
+            "closable": false,
+            "isSysConfig": true
+        },
+        {
+            "label": "数据导入",
+            "entityName": "new_import",
+            "closable": false,
+            "isSysConfig": true
+        },
+        {
+            "label": "CommonDeleteCheck",
+            "entityName": "commondeletecheck",
+            "closable": false,
+            "isSysConfig": true
+        },
+        {
+            "label": "语言配置",
+            "entityName": "new_languageconfig",
+            "closable": false,
+            "isSysConfig": true
+        },
+        {
+            "label": "系统模板",
+            "entityName": "documenttemplate",
+            "closable": false,
+            "isSysConfig": true
+        },
+        {
+            "label": "多语言数据字段对应",
+            "entityName": "new_multiple_language_contrast",
+            "closable": false,
+            "isSysConfig": true
+        },
+        {
+            "label": "数据多语言",
+            "entityName": "new_data_languageconfig",
+            "closable": false,
+            "isSysConfig": true
+        }
+    ]
+}

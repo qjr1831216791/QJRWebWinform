@@ -1,0 +1,87 @@
+{
+    "defaultPage": "WeatherForecast",
+    "componentsMapPath": {
+        "ConfigurationSync": "ConfigurationSync/main",
+        "TestPage": "Test/TestPage",
+        "CRMEntityMetadata": "CRMEntityMetadata/main",
+        "WeatherForecast": "WeatherForecast/main",
+        "CRMUserAndRoles": "CRMUserAndRoles/main",
+        "CRMTreeGraph": "CRMTreeGraph/main",
+        "CRMPluginTraceLog": "CRMPluginTraceLog/main",
+        "CRMFetchXmlQuery": "CRMFetchXmlQuery/main"
+    },
+    "componentsMapVuePath": {
+        "ConfigurationSync": "ConfigurationSync/ConfigurationSync.vue",
+        "TestPage": "Test/TestPage.vue",
+        "CRMEntityMetadata": "CRMEntityMetadata/CRMEntityMetadata.vue",
+        "WeatherForecast": "WeatherForecast/WeatherForecast.vue",
+        "SelfIntroduction": "Common/SelfIntroduction/SelfIntroduction.vue",
+        "CRMUserAndRoles": "CRMUserAndRoles/CRMUserAndRoles.vue",
+        "CRMTreeGraph": "CRMTreeGraph/CRMTreeGraph.vue",
+        "CRMPluginTraceLog": "CRMPluginTraceLog/CRMPluginTraceLog.vue",
+        "CRMFetchXmlQuery": "CRMFetchXmlQuery/CRMFetchXmlQuery.vue"
+    },
+    "menuGroup": [
+        {
+            "name": "天气与日期",
+            "index": "0",
+            "icon": "el-icon-date",
+            "items": [
+                {
+                    "name": "天气预报",
+                    "index": "0-1",
+                    "componentName": "WeatherForecast"
+                }
+            ]
+        },
+        {
+            "name": "测试",
+            "index": "1",
+            "icon": "el-icon-monitor",
+            "items": [
+                {
+                    "name": "系统功能测试",
+                    "index": "1-1",
+                    "componentName": "TestPage"
+                }
+            ]
+        },
+        {
+            "name": "CRM",
+            "index": "2",
+            "icon": "el-icon-setting",
+            "items": [
+                {
+                    "name": "CRM系统功能配置迁移",
+                    "index": "2-1",
+                    "componentName": "ConfigurationSync"
+                },
+                {
+                    "name": "CRM实体元数据查询",
+                    "index": "2-2",
+                    "componentName": "CRMEntityMetadata"
+                },
+                {
+                    "name": "CRM用户与安全角色",
+                    "index": "2-3",
+                    "componentName": "CRMUserAndRoles"
+                },
+                {
+                    "name": "CRM树形数据图",
+                    "index": "2-4",
+                    "componentName": "CRMTreeGraph"
+                },
+                {
+                    "name": "CRM插件跟踪日志",
+                    "index": "2-5",
+                    "componentName": "CRMPluginTraceLog"
+                },
+                {
+                    "name": "CRMFetchXmlQuery",
+                    "index": "2-6",
+                    "componentName": "CRMFetchXmlQuery"
+                }
+            ]
+        }
+    ]
+}
