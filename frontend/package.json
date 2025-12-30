@@ -5,8 +5,11 @@
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build",
-    "build:prod": "vue-cli-service build --mode production"
+    "build": "vue-cli-service build --no-cache",
+    "build:prod": "vue-cli-service build --mode production",
+    "build:clean": "vue-cli-service build --no-cache",
+    "clean": "node -e \"const fs=require('fs');const path=require('path');const dirs=['node_modules/.cache','node_modules/@vue/cli-service/.cache','dist','../src/QJRWebWinform.WPF/wwwroot'];dirs.forEach(p=>{try{const fullPath=path.resolve(__dirname,p);if(fs.existsSync(fullPath)){fs.rmSync(fullPath,{recursive:true,force:true});console.log('✓ Cleaned:',p)}else{console.log('⊘ Not found:',p)}}catch(e){console.error('✗ Error cleaning',p,':',e.message)}});console.log('\\n清理完成！请运行 npm run build 重新构建。')\"",
+    "rebuild": "npm run clean && npm run build"
   },
   "dependencies": {
     "vue": "^2.6.14",

@@ -145,10 +145,32 @@ JsCrm.common = {
 
 JsCrm.webApi = {
     ApiGet: function (apiName) {
-        let apiBaseUri = "api/";
-        if (this.env === "development" && context && context.envconfig.VUE_APP_DEV_API_URL) {
-            apiBaseUri = context.envconfig.VUE_APP_DEV_API_URL + apiBaseUri;
+        // 在 WPF 环境中，优先检查是否应该使用 NativeHost
+        // 如果 NativeHost 可用且配置为使用 NativeHost，则不应该调用 WebAPI
+        const apiMode = this._getApiMode();
+        if (apiMode === 'nativehost') {
+            // 如果配置为 NativeHost 模式，但调用了 ApiGet，说明可能有问题
+            // 这里不应该直接调用 NativeHost，因为 ApiGet 是 WebAPI 专用方法
+            // 但为了兼容性，我们仍然尝试构建正确的 URL
+            console.warn('ApiGet 在 NativeHost 模式下被调用，建议使用 invokeHiddenApi 方法');
         }
+
+        let apiBaseUri = "api/";
+        if (this.env === "development" && context && context.envconfig && context.envconfig.VUE_APP_DEV_API_URL) {
+            apiBaseUri = context.envconfig.VUE_APP_DEV_API_URL + apiBaseUri;
+        } else if (this.env === "development") {
+            // 如果没有配置 VUE_APP_DEV_API_URL，使用默认值
+            apiBaseUri = "http://localhost:8098/api/";
+        }
+        
+        // 确保 URL 是完整的 HTTP URL，而不是相对路径
+        // 如果 apiBaseUri 不是以 http:// 或 https:// 开头，且当前是 file:// 协议，则使用默认 URL
+        if (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:') {
+            if (!apiBaseUri.startsWith('http://') && !apiBaseUri.startsWith('https://')) {
+                apiBaseUri = "http://localhost:8098/api/";
+            }
+        }
+
         let customHeaders = {};
         if (context.$globalVar && context && context.$globalVar.selectEnv) {
             customHeaders["CrmEnv"] = context.$globalVar.selectEnv
@@ -170,10 +192,29 @@ JsCrm.webApi = {
     },
 
     ApiPost: function (apiName, params, isDataSubmit) {
-        let apiBaseUri = "api/";
-        if (this.env === "development" && context && context.envconfig.VUE_APP_DEV_API_URL) {
-            apiBaseUri = context.envconfig.VUE_APP_DEV_API_URL + apiBaseUri;
+        // 在 WPF 环境中，优先检查是否应该使用 NativeHost
+        const apiMode = this._getApiMode();
+        if (apiMode === 'nativehost') {
+            // 如果配置为 NativeHost 模式，但调用了 ApiPost，说明可能有问题
+            console.warn('ApiPost 在 NativeHost 模式下被调用，建议使用 invokeHiddenApi 方法');
         }
+
+        let apiBaseUri = "api/";
+        if (this.env === "development" && context && context.envconfig && context.envconfig.VUE_APP_DEV_API_URL) {
+            apiBaseUri = context.envconfig.VUE_APP_DEV_API_URL + apiBaseUri;
+        } else if (this.env === "development") {
+            // 如果没有配置 VUE_APP_DEV_API_URL，使用默认值
+            apiBaseUri = "http://localhost:8098/api/";
+        }
+        
+        // 确保 URL 是完整的 HTTP URL，而不是相对路径
+        // 如果 apiBaseUri 不是以 http:// 或 https:// 开头，且当前是 file:// 协议，则使用默认 URL
+        if (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:') {
+            if (!apiBaseUri.startsWith('http://') && !apiBaseUri.startsWith('https://')) {
+                apiBaseUri = "http://localhost:8098/api/";
+            }
+        }
+
         let customHeaders = {};
         if (context.$globalVar && context && context.$globalVar.selectEnv) {
             customHeaders["CrmEnv"] = context.$globalVar.selectEnv
@@ -202,46 +243,65 @@ JsCrm.webApi = {
      */
     _getApiMode: function () {
         if (!context || !context.envconfig) {
+            console.warn('[API Mode] context 或 envconfig 不存在，使用默认 WebAPI 模式');
             return 'webapi'; // 默认使用 WebAPI
         }
 
         const config = context.envconfig;
         const apiMode = config.API_MODE || 'auto';
         const forceNativeHost = config.FORCE_NATIVE_HOST === true;
+        
+        // 检查 NativeHost 是否可用
+        const nativeHostAvailable = typeof window !== 'undefined' && 
+                                   window.nativeHost && 
+                                   typeof window.nativeHost.executeCommand === 'function';
+        
+        console.log('[API Mode] 配置检测:', {
+            apiMode: apiMode,
+            forceNativeHost: forceNativeHost,
+            nativeHostAvailable: nativeHostAvailable,
+            windowLocation: typeof window !== 'undefined' && window.location ? window.location.href : 'N/A'
+        });
 
         // 如果强制使用 NativeHost，直接返回
         if (forceNativeHost) {
-            if (typeof window !== 'undefined' && window.nativeHost && typeof window.nativeHost.executeCommand === 'function') {
+            if (nativeHostAvailable) {
+                console.log('[API Mode] 强制使用 NativeHost 模式');
                 return 'nativehost';
             } else {
-                console.warn('配置要求使用 NativeHost，但 NativeHost 不可用，将尝试使用 WebAPI');
+                console.warn('[API Mode] 配置要求使用 NativeHost，但 NativeHost 不可用，将尝试使用 WebAPI');
                 return 'webapi';
             }
         }
 
         // 如果明确指定模式，直接返回
         if (apiMode === 'webapi') {
+            console.log('[API Mode] 明确指定使用 WebAPI 模式');
             return 'webapi';
         }
         if (apiMode === 'nativehost') {
-            if (typeof window !== 'undefined' && window.nativeHost && typeof window.nativeHost.executeCommand === 'function') {
+            if (nativeHostAvailable) {
+                console.log('[API Mode] 明确指定使用 NativeHost 模式');
                 return 'nativehost';
             } else {
-                console.warn('配置要求使用 NativeHost，但 NativeHost 不可用，将降级使用 WebAPI');
+                console.warn('[API Mode] 配置要求使用 NativeHost，但 NativeHost 不可用，将降级使用 WebAPI');
                 return 'webapi';
             }
         }
 
         // 自动检测模式：如果 NativeHost 可用则使用，否则使用 WebAPI
         if (apiMode === 'auto') {
-            if (typeof window !== 'undefined' && window.nativeHost && typeof window.nativeHost.executeCommand === 'function') {
+            if (nativeHostAvailable) {
+                console.log('[API Mode] 自动检测：NativeHost 可用，使用 NativeHost 模式');
                 return 'nativehost';
             } else {
+                console.log('[API Mode] 自动检测：NativeHost 不可用，使用 WebAPI 模式');
                 return 'webapi';
             }
         }
 
         // 默认使用 WebAPI
+        console.log('[API Mode] 使用默认 WebAPI 模式');
         return 'webapi';
     },
 
@@ -256,13 +316,43 @@ JsCrm.webApi = {
             throw new Error('NativeHost 不可用，无法执行调用');
         }
 
-        // 准备参数
+        // 准备参数，并添加 CrmEnv（如果存在）
         let parametersJson = null;
         if (actionPara !== null && actionPara !== undefined) {
+            let paramObj = null;
+            
             if (typeof actionPara === 'string') {
-                parametersJson = actionPara;
+                // 如果是字符串，尝试解析为 JSON
+                try {
+                    paramObj = JSON.parse(actionPara);
+                } catch (e) {
+                    // 如果不是有效的 JSON，直接使用原字符串
+                    parametersJson = actionPara;
+                }
             } else {
-                parametersJson = JSON.stringify(actionPara);
+                // 如果是对象，直接使用
+                paramObj = actionPara;
+            }
+            
+            // 如果成功解析为对象，添加 CrmEnv
+            if (paramObj !== null && typeof paramObj === 'object') {
+                // 检查是否已有 crmEnv 相关字段，如果没有则添加
+                if (!paramObj.hasOwnProperty('crmEnv') && 
+                    !paramObj.hasOwnProperty('CrmEnv') && 
+                    !paramObj.hasOwnProperty('crmenv') && 
+                    !paramObj.hasOwnProperty('envir') && 
+                    !paramObj.hasOwnProperty('environment')) {
+                    // 从全局变量获取 CrmEnv（与 ApiPost 保持一致）
+                    if (context.$globalVar && context && context.$globalVar.selectEnv) {
+                        paramObj.crmEnv = context.$globalVar.selectEnv;
+                    }
+                }
+                parametersJson = JSON.stringify(paramObj);
+            }
+        } else {
+            // 如果 actionPara 为空，但存在 CrmEnv，创建一个包含 CrmEnv 的参数对象
+            if (context.$globalVar && context && context.$globalVar.selectEnv) {
+                parametersJson = JSON.stringify({ crmEnv: context.$globalVar.selectEnv });
             }
         }
 
@@ -307,13 +397,43 @@ JsCrm.webApi = {
                 return;
             }
 
-            // 准备参数
+            // 准备参数，并添加 CrmEnv（如果存在）
             let parametersJson = null;
             if (actionPara !== null && actionPara !== undefined) {
+                let paramObj = null;
+                
                 if (typeof actionPara === 'string') {
-                    parametersJson = actionPara;
+                    // 如果是字符串，尝试解析为 JSON
+                    try {
+                        paramObj = JSON.parse(actionPara);
+                    } catch (e) {
+                        // 如果不是有效的 JSON，直接使用原字符串
+                        parametersJson = actionPara;
+                    }
                 } else {
-                    parametersJson = JSON.stringify(actionPara);
+                    // 如果是对象，直接使用
+                    paramObj = actionPara;
+                }
+                
+                // 如果成功解析为对象，添加 CrmEnv
+                if (paramObj !== null && typeof paramObj === 'object') {
+                    // 检查是否已有 crmEnv 相关字段，如果没有则添加
+                    if (!paramObj.hasOwnProperty('crmEnv') && 
+                        !paramObj.hasOwnProperty('CrmEnv') && 
+                        !paramObj.hasOwnProperty('crmenv') && 
+                        !paramObj.hasOwnProperty('envir') && 
+                        !paramObj.hasOwnProperty('environment')) {
+                        // 从全局变量获取 CrmEnv（与 ApiPost 保持一致）
+                        if (context.$globalVar && context && context.$globalVar.selectEnv) {
+                            paramObj.crmEnv = context.$globalVar.selectEnv;
+                        }
+                    }
+                    parametersJson = JSON.stringify(paramObj);
+                }
+            } else {
+                // 如果 actionPara 为空，但存在 CrmEnv，创建一个包含 CrmEnv 的参数对象
+                if (context.$globalVar && context && context.$globalVar.selectEnv) {
+                    parametersJson = JSON.stringify({ crmEnv: context.$globalVar.selectEnv });
                 }
             }
 

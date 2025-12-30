@@ -122,24 +122,47 @@ export default {
         //获取CRM环境列表
         GetCRMEnvironments: function () {
             let _this = this;
-            this.jshelper.ApiGet("Default/GetCRMEnvironments").then((resp) => {
-                if (resp && resp.isSuccess) {
-                    this.$set(_this, "environments", resp.data);
-                    if (resp.data != null && resp.data.length > 0) {
-                        this.$set(this, "selectEnvironment", resp.data[0].value);
-                        this.environmentSelectChange(this.selectEnvironment);
+            const apiMode = this.jshelper._getApiMode();
+            if (apiMode === 'nativehost') {
+                this.jshelper.invokeHiddenApiAsync("new_hbxn_common", "Default/GetCRMEnvironments", null).then((resp) => {
+                    if (resp && resp.isSuccess) {
+                        this.$set(_this, "environments", resp.data);
+                        if (resp.data != null && resp.data.length > 0) {
+                            this.$set(this, "selectEnvironment", resp.data[0].value);
+                            this.environmentSelectChange(this.selectEnvironment);
+                        }
                     }
-                }
 
-                this.$set(this, "showMain", true);
-                setTimeout(() => {
-                    this.$set(this, "showSelf", false);
-                }, 3000);
-            }).catch((err) => {
-                this.jshelper.openAlertDialog(this, err.message, "获取CRM环境列表");
-            }).finally(() => {
-                this.jshelper.closeLoading();
-            });
+                    this.$set(this, "showMain", true);
+                    setTimeout(() => {
+                        this.$set(this, "showSelf", false);
+                    }, 3000);
+                }).catch((err) => {
+                    this.jshelper.openAlertDialog(this, err.message, "获取CRM环境列表");
+                }).finally(() => {
+                    this.jshelper.closeLoading();
+                });
+            }
+            else {
+                this.jshelper.ApiGet("Default/GetCRMEnvironments").then((resp) => {
+                    if (resp && resp.isSuccess) {
+                        this.$set(_this, "environments", resp.data);
+                        if (resp.data != null && resp.data.length > 0) {
+                            this.$set(this, "selectEnvironment", resp.data[0].value);
+                            this.environmentSelectChange(this.selectEnvironment);
+                        }
+                    }
+
+                    this.$set(this, "showMain", true);
+                    setTimeout(() => {
+                        this.$set(this, "showSelf", false);
+                    }, 3000);
+                }).catch((err) => {
+                    this.jshelper.openAlertDialog(this, err.message, "获取CRM环境列表");
+                }).finally(() => {
+                    this.jshelper.closeLoading();
+                });
+            }
         },
 
         //环境选择器OnChange
