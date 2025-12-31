@@ -90,3 +90,7 @@ yarn-error.log*
 .env.local
 .env.*.local
 
+# Config folders (exclude from version control)
+**/Config/
+src/**/Config/
+
