@@ -38,19 +38,14 @@ if (Test-Path $targetDir) {
 }
 New-Item -ItemType Directory -Force -Path $targetDir | Out-Null
 
-# 定义需要复制的文件模式
-$filePatterns = @(
+# 定义需要复制的特定文件（非 DLL 文件）
+$specificFiles = @(
     # 主程序
     "QJRWebWinform.WPF.exe",
     "QJRWebWinform.WPF.exe.config",
     
-    # CefSharp 核心文件
-    "CefSharp.BrowserSubprocess.Core.dll",
+    # CefSharp 子进程
     "CefSharp.BrowserSubprocess.exe",
-    "CefSharp.Core.dll",
-    "CefSharp.Core.Runtime.dll",
-    "CefSharp.dll",
-    "CefSharp.Wpf.dll",
     
     # Chromium 核心文件
     "chrome_elf.dll",
@@ -68,30 +63,54 @@ $filePatterns = @(
     "chrome_100_percent.pak",
     "chrome_200_percent.pak",
     
-    # 其他依赖
-    "Newtonsoft.Json.dll",
-    
     # 文档
     "LICENSE.txt",
     "README.txt"
 )
 
-# 复制文件
+# 复制特定文件
 Write-Host ""
-Write-Host "复制文件..." -ForegroundColor Yellow
+Write-Host "复制特定文件..." -ForegroundColor Yellow
 $copiedCount = 0
 $missingFiles = @()
 
-foreach ($pattern in $filePatterns) {
-    $sourceFile = Join-Path $sourceDir $pattern
+foreach ($file in $specificFiles) {
+    $sourceFile = Join-Path $sourceDir $file
     if (Test-Path $sourceFile) {
         Copy-Item -Path $sourceFile -Destination $targetDir -Force
         $copiedCount++
-        Write-Host "  ✓ $pattern" -ForegroundColor Green
+        Write-Host "  ✓ $file" -ForegroundColor Green
     } else {
-        $missingFiles += $pattern
-        Write-Host "  ⚠ $pattern (未找到，跳过)" -ForegroundColor Yellow
+        $missingFiles += $file
+        Write-Host "  ⚠ $file (未找到，跳过)" -ForegroundColor Yellow
     }
+}
+
+# 复制所有 DLL 文件（排除已在特定文件列表中的 DLL）
+Write-Host ""
+Write-Host "复制 DLL 文件..." -ForegroundColor Yellow
+$specificFileNames = $specificFiles | ForEach-Object { [System.IO.Path]::GetFileName($_) }
+$dllFiles = Get-ChildItem -Path $sourceDir -Filter "*.dll" -File | Where-Object {
+    # 排除已在特定文件列表中的 DLL（如 chrome_elf.dll, libcef.dll 等）
+    $_.Name -notin $specificFileNames
+}
+
+foreach ($dll in $dllFiles) {
+    $destFile = Join-Path $targetDir $dll.Name
+    Copy-Item -Path $dll.FullName -Destination $destFile -Force
+    $copiedCount++
+    Write-Host "  ✓ $($dll.Name)" -ForegroundColor Green
+}
+
+# 复制所有 DLL 配置文件
+Write-Host ""
+Write-Host "复制配置文件..." -ForegroundColor Yellow
+$configFiles = Get-ChildItem -Path $sourceDir -Filter "*.dll.config" -File
+foreach ($config in $configFiles) {
+    $destFile = Join-Path $targetDir $config.Name
+    Copy-Item -Path $config.FullName -Destination $destFile -Force
+    $copiedCount++
+    Write-Host "  ✓ $($config.Name)" -ForegroundColor Green
 }
 
 # 复制目录
@@ -150,6 +169,11 @@ Write-Host "压缩包: $zipPath" -ForegroundColor Yellow
 Write-Host "总文件数: $copiedCount" -ForegroundColor Yellow
 Write-Host "发布包大小: $totalSizeMB MB" -ForegroundColor Yellow
 Write-Host "压缩包大小: $zipSizeMB MB" -ForegroundColor Yellow
+Write-Host ""
+Write-Host "已排除的文件类型:" -ForegroundColor Cyan
+Write-Host "  - *.pdb (调试符号文件)" -ForegroundColor Gray
+Write-Host "  - *.xml (XML 文档文件)" -ForegroundColor Gray
+Write-Host "  - DawnCache, GPUCache, Logs (运行时生成目录)" -ForegroundColor Gray
 Write-Host ""
 
 if ($missingFiles.Count -gt 0) {

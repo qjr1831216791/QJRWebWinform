@@ -60,70 +60,108 @@ export default context
 Vue.use(ElementUI)
 Vue.config.productionTip = false
 
-// 等待 CefSharp NativeHost 初始化完成（来自 QJRWebWinform）
-function waitForNativeHost(callback, maxAttempts = 150) {
-  let attempts = 0
-  let isReady = false
+/**
+ * 检测当前是否为桌面端环境（WPF CefSharp）
+ * @returns {boolean} true 表示桌面端，false 表示 Web 端
+ */
+function isDesktopEnvironment() {
+  if (typeof window === 'undefined' || !window.location) {
+    return false
+  }
+  // 桌面端使用 file:// 协议，Web 端使用 http:// 或 https://
+  return window.location.protocol === 'file:'
+}
 
-  // 监听 nativeHostReady 事件
-  window.nativeHostReady = function () {
-    if (!isReady) {
-      isReady = true
-      callback()
-    }
+/**
+ * 等待 CefSharp NativeHost 初始化完成（返回 Promise 版本）
+ * 仅在桌面端环境需要等待，Web 端立即返回 resolved Promise
+ * @param {number} maxAttempts - 最大尝试次数，默认 150（15秒）
+ * @returns {Promise<void>}
+ */
+function waitForNativeHostPromise(maxAttempts = 150) {
+  // Web 端不需要等待 NativeHost
+  if (!isDesktopEnvironment()) {
+    return Promise.resolve()
   }
 
-  // 监听自定义事件
-  window.addEventListener('nativeHostReady', function () {
-    if (!isReady) {
-      isReady = true
-      callback()
-    }
-  })
+  return new Promise((resolve) => {
+    let attempts = 0
+    let isReady = false
 
-  // 检查全局标志（如果后端已经设置）
-  if (window.__nativeHostReady) {
-    isReady = true
-    callback()
-    return
-  }
-
-  const checkNativeHost = () => {
-    attempts++
-
-    // 检查全局标志
-    if (window.__nativeHostReady) {
+    const callback = () => {
       if (!isReady) {
         isReady = true
-        callback()
+        resolve()
       }
+    }
+
+    // 监听 nativeHostReady 事件
+    window.nativeHostReady = function () {
+      callback()
+    }
+
+    // 监听自定义事件
+    window.addEventListener('nativeHostReady', function () {
+      callback()
+    })
+
+    // 检查全局标志（如果后端已经设置）
+    if (window.__nativeHostReady) {
+      callback()
       return
     }
 
-    // 检查 nativeHost 是否可用（检查是否有 executeCommand 方法，统一入口）
-    if (typeof window.nativeHost !== 'undefined' &&
-      window.nativeHost &&
-      typeof window.nativeHost.executeCommand === 'function') {
-      if (!isReady) {
-        isReady = true
+    const checkNativeHost = () => {
+      attempts++
+
+      // 检查全局标志
+      if (window.__nativeHostReady) {
+        callback()
+        return
+      }
+
+      // 检查 nativeHost 是否可用（检查是否有 executeCommand 方法，统一入口）
+      if (typeof window.nativeHost !== 'undefined' &&
+        window.nativeHost &&
+        typeof window.nativeHost.executeCommand === 'function') {
+        callback()
+      } else if (attempts < maxAttempts) {
+        setTimeout(checkNativeHost, 100)
+      } else {
+        // 超时后继续运行（可能 NativeHost 还未准备好，但不影响应用启动）
+        // 注意：如果应用依赖 NativeHost，这里可能需要显示错误提示
+        console.warn('NativeHost 初始化超时，某些功能可能不可用')
         callback()
       }
-    } else if (attempts < maxAttempts) {
-      setTimeout(checkNativeHost, 100)
-    } else {
-      // 超时后继续运行（可能 NativeHost 还未准备好，但不影响应用启动）
-      // 注意：如果应用依赖 NativeHost，这里可能需要显示错误提示
-      console.warn('NativeHost 初始化超时，某些功能可能不可用')
-      callback()
     }
-  }
 
-  // 延迟一小段时间再开始轮询，给后端一些时间完成注册
-  setTimeout(checkNativeHost, 200)
+    // 延迟一小段时间再开始轮询，给后端一些时间完成注册
+    setTimeout(checkNativeHost, 200)
+  })
+}
+
+// 导出 waitForNativeHostPromise 供其他模块使用
+if (typeof window !== 'undefined') {
+  window.waitForNativeHostPromise = waitForNativeHostPromise
 }
 
 // 初始化 Vue 应用
-waitForNativeHost(() => {
+// Web 端：立即启动，不等待 NativeHost
+// 桌面端：等待 NativeHost 就绪后再启动（保持原有行为）
+if (isDesktopEnvironment()) {
+  // 桌面端：等待 NativeHost 就绪
+  waitForNativeHostPromise().then(() => {
+    initializeVueApp()
+  })
+} else {
+  // Web 端：立即启动
+  initializeVueApp()
+}
+
+/**
+ * 初始化 Vue 应用
+ */
+function initializeVueApp() {
   const app = new Vue({
     router,
     render: h => h(App)
@@ -141,5 +179,5 @@ waitForNativeHost(() => {
     // 更新全局变量引用
     window.__globalVar__ = ctx.$globalVar
   }
-})
+}
 

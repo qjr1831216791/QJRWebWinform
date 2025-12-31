@@ -143,6 +143,86 @@ JsCrm.common = {
     },
 };
 
+/**
+ * 检测当前是否为桌面端环境（WPF CefSharp）
+ * @returns {boolean} true 表示桌面端，false 表示 Web 端
+ */
+function isDesktopEnvironment() {
+    if (typeof window === 'undefined' || !window.location) {
+        return false;
+    }
+    // 桌面端使用 file:// 协议，Web 端使用 http:// 或 https://
+    return window.location.protocol === 'file:';
+}
+
+/**
+ * 等待 NativeHost 就绪（仅在桌面端需要）
+ * 如果 window.waitForNativeHostPromise 存在（由 main.js 提供），则使用它
+ * 否则创建一个简单的等待逻辑
+ * @returns {Promise<void>}
+ */
+function waitForNativeHostIfNeeded() {
+    // Web 端不需要等待
+    if (!isDesktopEnvironment()) {
+        return Promise.resolve();
+    }
+
+    // 如果 main.js 已经提供了 waitForNativeHostPromise，直接使用
+    if (typeof window !== 'undefined' && typeof window.waitForNativeHostPromise === 'function') {
+        return window.waitForNativeHostPromise();
+    }
+
+    // 否则创建一个简单的等待逻辑（兼容性处理）
+    return new Promise((resolve) => {
+        // 如果已经就绪，立即返回
+        if (window.__nativeHostReady || 
+            (typeof window.nativeHost !== 'undefined' && 
+             window.nativeHost && 
+             typeof window.nativeHost.executeCommand === 'function')) {
+            resolve();
+            return;
+        }
+
+        // 监听就绪事件
+        const onReady = () => {
+            window.removeEventListener('nativeHostReady', onReady);
+            if (typeof window.nativeHostReady === 'function') {
+                window.nativeHostReady = null;
+            }
+            resolve();
+        };
+
+        window.addEventListener('nativeHostReady', onReady);
+        if (typeof window.nativeHostReady === 'function') {
+            const originalReady = window.nativeHostReady;
+            window.nativeHostReady = function() {
+                originalReady();
+                onReady();
+            };
+        }
+
+        // 轮询检查（最多等待 15 秒）
+        let attempts = 0;
+        const maxAttempts = 150;
+        const checkNativeHost = () => {
+            attempts++;
+            if (window.__nativeHostReady || 
+                (typeof window.nativeHost !== 'undefined' && 
+                 window.nativeHost && 
+                 typeof window.nativeHost.executeCommand === 'function')) {
+                onReady();
+            } else if (attempts < maxAttempts) {
+                setTimeout(checkNativeHost, 100);
+            } else {
+                // 超时后继续
+                console.warn('NativeHost 等待超时，继续执行');
+                onReady();
+            }
+        };
+        setTimeout(checkNativeHost, 200);
+    });
+}
+
 JsCrm.webApi = {
     ApiGet: function (apiName) {
         // 在 WPF 环境中，优先检查是否应该使用 NativeHost
@@ -307,6 +387,7 @@ JsCrm.webApi = {
 
     /**
      * 通过 NativeHost 调用 API（同步）
+     * 注意：此方法假设在调用前已经等待 NativeHost 就绪（通过 invokeHiddenApi 中的 await waitForNativeHostIfNeeded()）
      * @param {string} apiName - Controller/Action 格式的路由
      * @param {object|string} actionPara - 参数对象或 JSON 字符串
      * @returns {object} 响应结果
@@ -401,11 +482,13 @@ JsCrm.webApi = {
      * @returns {Promise<object>} 响应结果
      */
     _invokeViaNativeHostAsync: function (apiName, actionPara) {
-        return new Promise((resolve, reject) => {
-            if (typeof window === 'undefined' || !window.nativeHost) {
-                reject(new Error('NativeHost 不可用，无法执行调用'));
-                return;
-            }
+        // 先在桌面端等待 NativeHost 就绪（Web 端会立即 resolve）
+        return waitForNativeHostIfNeeded().then(() => {
+            return new Promise((resolve, reject) => {
+                if (typeof window === 'undefined' || !window.nativeHost) {
+                    reject(new Error('NativeHost 不可用，无法执行调用'));
+                    return;
+                }
 
             // 准备参数的辅助函数（提取为公共逻辑）
             const prepareParameters = () => {
@@ -559,6 +642,7 @@ JsCrm.webApi = {
             } else {
                 reject(new Error('NativeHost 不可用，无法执行调用'));
             }
+            });
         });
     },
 
@@ -628,6 +712,8 @@ JsCrm.webApi = {
 
             if (apiMode === 'nativehost') {
                 // 使用 NativeHost 调用（同步方式，但包装为 Promise）
+                // 在桌面端，先等待 NativeHost 就绪
+                await waitForNativeHostIfNeeded();
                 try {
                     const result = this._invokeViaNativeHost(apiName, actionPara);
                     return result;
