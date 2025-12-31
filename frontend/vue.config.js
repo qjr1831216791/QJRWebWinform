@@ -34,13 +34,23 @@ module.exports = {
       }
     },
     // 明确指定上下文目录，确保从正确的源目录读取文件
-    context: __dirname
+    context: __dirname,
+    // 禁用所有可能的缓存
+    snapshot: {
+      managedPaths: [],
+      immutablePaths: []
+    }
   },
 
   // 链式操作 webpack 配置
   chainWebpack: config => {
     // 禁用所有缓存机制，确保每次都重新构建
     config.cache(false)
+    
+    // 禁用 cache-loader（如果存在）
+    if (config.module.rules.has('cache-loader')) {
+      config.module.rules.delete('cache-loader')
+    }
     
     // 禁用 ESLint loader
     config.module.rules.delete('eslint')

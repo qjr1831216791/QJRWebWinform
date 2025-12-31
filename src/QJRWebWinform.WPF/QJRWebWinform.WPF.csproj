@@ -35,6 +35,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.Xrm.Sdk, Version=9.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" />
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
@@ -64,6 +65,14 @@
       <SubType>code</SubType>
     </Compile>
     <Compile Include="CefSharpHost.cs" />
+    <Compile Include="Controllers\DefaultController.cs" />
+    <Compile Include="Controllers\DynamicControllerBase.cs" />
+    <Compile Include="Controllers\HolidayController.cs" />
+    <Compile Include="Controllers\RetrieveCRMDataController.cs" />
+    <Compile Include="Controllers\RetrieveEntityMetadataController.cs" />
+    <Compile Include="Controllers\RetrieveUserAndRolesController.cs" />
+    <Compile Include="Controllers\SyncConfigurationController.cs" />
+    <Compile Include="Controllers\WeatherForecastController.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>code</SubType>
@@ -93,6 +102,21 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="Config\Baidu.Map.Config.xml.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Config\Environments.CrmClient.Config.CrmConfig.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Config\Log.Config.xml.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Config\RekTec.XStudio.CrmClient.Config.CrmConfig.xml.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Config\ThinkAPI.Config.xml.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -106,14 +130,48 @@
     <PackageReference Include="CefSharp.Common" Version="120.1.110" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\APIService\APIService.csproj">
+      <Project>{13fa35ef-8ddf-46bf-b13e-a812664bab29}</Project>
+      <Name>APIService</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BaiduMapService\BaiduMapService.csproj">
+      <Project>{31f4f7a1-e327-4254-b61c-d7e6d26d8d2d}</Project>
+      <Name>BaiduMapService</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CommonHelper\CommonHelper.csproj">
+      <Project>{4c9e96fe-2d87-474d-9ab4-001addb76e09}</Project>
+      <Name>CommonHelper</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CrmConnection\CrmConnection.csproj">
+      <Project>{8c988fb2-e083-4eef-af5b-4d6ab0591363}</Project>
+      <Name>CrmConnection</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\LogService\LogService.csproj">
+      <Project>{ba91966c-74bc-436f-a273-85d6dbdffbf2}</Project>
+      <Name>LogService</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ThinkAPIService\ThinkAPIService.csproj">
+      <Project>{dfbbe6b8-1621-49d3-862a-b105cfaabf46}</Project>
+      <Name>ThinkAPIService</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- 使用构建后目标复制 wwwroot 目录，避免文件名变化导致的错误 -->
+  <!-- 使用构建后目标复制 wwwroot 目录，确保每次构建都更新文件 -->
   <Target Name="CopyWwwrootFiles" AfterTargets="AfterBuild" Condition="Exists('$(ProjectDir)wwwroot')">
     <ItemGroup>
       <WwwrootFiles Include="$(ProjectDir)wwwroot\**\*" />
     </ItemGroup>
-    <Message Text="Copying wwwroot files to output directory..." Importance="normal" />
-    <Copy SourceFiles="@(WwwrootFiles)" DestinationFiles="@(WwwrootFiles->'$(OutDir)wwwroot\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" ContinueOnError="true" />
-    <Message Text="Copied @(WwwrootFiles-&gt;Count()) files from wwwroot" Importance="normal" />
+    <Message Text="Copying wwwroot files to output directory ($(Configuration))..." Importance="normal" />
+    <!-- 先删除输出目录中的旧文件，确保完全同步 -->
+    <RemoveDir Directories="$(OutDir)wwwroot" Condition="Exists('$(OutDir)wwwroot')" />
+    <!-- 复制所有文件，不使用 SkipUnchangedFiles 以确保文件始终更新 -->
+    <Copy SourceFiles="@(WwwrootFiles)" DestinationFiles="@(WwwrootFiles->'$(OutDir)wwwroot\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="false" ContinueOnError="true" />
+    <Message Text="Copied @(WwwrootFiles-&gt;Count()) files from wwwroot to $(OutDir)wwwroot" Importance="normal" />
+  </Target>
+  <!-- 在清理时也删除输出目录中的 wwwroot -->
+  <Target Name="CleanWwwrootFiles" AfterTargets="Clean" Condition="Exists('$(OutDir)wwwroot')">
+    <Message Text="Cleaning wwwroot from output directory..." Importance="normal" />
+    <RemoveDir Directories="$(OutDir)wwwroot" />
   </Target>
 </Project>

@@ -16,14 +16,19 @@ Vue.prototype.axios = axios
 Vue.prototype.rtcrm = rtcrm // 公共脚本
 Vue.prototype.jshelper = jshelper // 公共脚本
 Vue.prototype.envconfig = WebConfig // 全局环境配置
-Vue.prototype.$globalVar = {} // 全局变量
+
+// 创建共享的全局变量对象，确保 Vue 实例和 context 使用同一个对象
+// 这样无论在 Vue 组件中设置，还是在 context 中读取，都是同一个对象
+const sharedGlobalVar = {}
+
+Vue.prototype.$globalVar = sharedGlobalVar // 全局变量
 
 // 创建 context 对象，供 JsCrmHelper.js 等脚本使用
 // 这个对象包含全局配置，可以在 Vue 实例创建前使用（支持独立调试）
 const context = {
   envconfig: WebConfig,
   axios: axios,
-  $globalVar: {},
+  $globalVar: sharedGlobalVar, // 使用共享的全局变量对象
   // Vue 实例创建后，这些方法会被更新为真实的 Vue 方法
   $confirm: function() {
     if (window.Vue && window.Vue.prototype.$confirm) {
@@ -130,6 +135,8 @@ waitForNativeHost(() => {
     const ctx = window.__VUE_CONTEXT__
     ctx.$confirm = app.$confirm.bind(app)
     ctx.$loading = app.$loading.bind(app)
+    // $globalVar 已经在初始化时共享，无需更新
+    // 但为了确保一致性，仍然同步引用（实际上它们已经是同一个对象）
     ctx.$globalVar = app.$globalVar || ctx.$globalVar
     // 更新全局变量引用
     window.__globalVar__ = ctx.$globalVar

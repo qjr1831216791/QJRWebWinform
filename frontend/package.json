@@ -1,6 +1,6 @@
 {
   "name": "qjrwebwinform-frontend",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "QJR Web Winform Frontend - Vue 2 Application",
   "private": true,
   "scripts": {
@@ -8,7 +8,8 @@
     "build": "vue-cli-service build --no-cache",
     "build:prod": "vue-cli-service build --mode production",
     "build:clean": "vue-cli-service build --no-cache",
-    "clean": "node -e \"const fs=require('fs');const path=require('path');const dirs=['node_modules/.cache','node_modules/@vue/cli-service/.cache','dist','../src/QJRWebWinform.WPF/wwwroot'];dirs.forEach(p=>{try{const fullPath=path.resolve(__dirname,p);if(fs.existsSync(fullPath)){fs.rmSync(fullPath,{recursive:true,force:true});console.log('✓ Cleaned:',p)}else{console.log('⊘ Not found:',p)}}catch(e){console.error('✗ Error cleaning',p,':',e.message)}});console.log('\\n清理完成！请运行 npm run build 重新构建。')\"",
+    "clean": "node -e \"const fs=require('fs');const path=require('path');const os=require('os');const dirs=['node_modules/.cache','node_modules/@vue/cli-service/.cache','node_modules/.vite','dist','../src/QJRWebWinform.WPF/wwwroot'];const userCache=path.join(os.homedir(),'.npm','_cacache');dirs.forEach(p=>{try{const fullPath=path.resolve(__dirname,p);if(fs.existsSync(fullPath)){fs.rmSync(fullPath,{recursive:true,force:true});console.log('✓ Cleaned:',p)}else{console.log('⊘ Not found:',p)}}catch(e){console.error('✗ Error cleaning',p,':',e.message)}});if(fs.existsSync(userCache)){try{fs.rmSync(userCache,{recursive:true,force:true});console.log('✓ Cleaned npm global cache:',userCache)}catch(e){console.error('✗ Error cleaning npm cache:',e.message)}}console.log('\\n清理完成！请运行 npm run build 重新构建。')\"",
+    "clean:all": "npm cache clean --force && npm run clean",
     "rebuild": "npm run clean && npm run build"
   },
   "dependencies": {

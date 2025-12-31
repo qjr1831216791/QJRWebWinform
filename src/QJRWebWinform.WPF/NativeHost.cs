@@ -33,6 +33,13 @@ namespace QJRWebWinform.WPF
             {
                 new SystemController(_mainWindow),
                 new WindowController(_mainWindow),
+                new DefaultController(_mainWindow),
+                new HolidayController(_mainWindow),
+                new RetrieveCRMDataController(_mainWindow),
+                new RetrieveEntityMetadataController(_mainWindow),
+                new RetrieveUserAndRolesController(_mainWindow),
+                new SyncConfigurationController(_mainWindow),
+                new WeatherForecastController(_mainWindow),
             });
         }
 
