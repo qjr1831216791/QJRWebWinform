@@ -141,18 +141,29 @@ JsCrm.common = {
         const weekday = formatter.format(date);
         return weekday;
     },
+
+    /**
+     * 检测当前是否为桌面端环境（WPF CefSharp）
+     * @returns {boolean} true 表示桌面端，false 表示 Web 端
+     */
+    isDesktopEnvironment: function () {
+        if (typeof window === 'undefined' || !window.location) {
+            return false;
+        }
+        // 桌面端使用 file:// 协议，Web 端使用 http:// 或 https://
+        return window.location.protocol === 'file:';
+    },
 };
 
 /**
  * 检测当前是否为桌面端环境（WPF CefSharp）
+ * 全局函数版本，保持向后兼容
+ * 直接调用 JsCrm.common.isDesktopEnvironment 以保持逻辑统一
  * @returns {boolean} true 表示桌面端，false 表示 Web 端
  */
 function isDesktopEnvironment() {
-    if (typeof window === 'undefined' || !window.location) {
-        return false;
-    }
-    // 桌面端使用 file:// 协议，Web 端使用 http:// 或 https://
-    return window.location.protocol === 'file:';
+    // 直接调用 JsCrm.common 中的方法（因为此函数在 JsCrm.common 定义之后）
+    return JsCrm.common.isDesktopEnvironment();
 }
 
 /**

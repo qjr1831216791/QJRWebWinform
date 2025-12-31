@@ -125,6 +125,12 @@ export default {
             let tableHeight = parseInt(this.tableHeight);
             return tableHeight - 30 + "px";
         },
+        // 检测是否为桌面端环境（复用 JsCrmHelper 的方法）
+        isDesktop() {
+            return this.jshelper && this.jshelper.isDesktopEnvironment 
+                ? this.jshelper.isDesktopEnvironment() 
+                : false;
+        },
     },
     methods: {
         //处理表格多选
@@ -178,8 +184,15 @@ export default {
                             return;
                         }
                         if (res.isSuccess) {
-                            _this.base64ToFile(res.data, res.message);
-                            _this.showMessage("请求成功", "success", true);
+                            // 根据环境选择下载方式
+                            if (_this.isDesktop) {
+                                // 桌面端：使用 C# 方法保存文件（内部会显示消息）
+                                _this.saveFileDesktop(res.data, res.message);
+                            } else {
+                                // Web 端：使用 JavaScript 下载
+                                _this.base64ToFile(res.data, res.message);
+                                _this.showMessage("请求成功", "success", true);
+                            }
                         } else {
                             _this.showMessage("请求失败", "error", true);
                         }
@@ -198,11 +211,58 @@ export default {
             }
         },
 
-        //#region base64转文件下载
+        //桌面端保存文件（通过 C# 方法）
+        saveFileDesktop: function (base64, fileName) {
+            let _this = this;
+            try {
+                // 检查 nativeHost 是否可用
+                if (typeof window === 'undefined' || !window.nativeHost) {
+                    _this.showMessage("桌面端环境未初始化，无法保存文件", "error", true);
+                    return;
+                }
+
+                var input = {
+                    base64Data: base64,
+                    fileName: fileName
+                };
+
+                // 调用 C# 方法保存文件
+                window.nativeHost.executeCommandAsync(
+                    'System/SaveFile',
+                    JSON.stringify(input),
+                    function (success, result) {
+                        try {
+                            var resultObj = typeof result === 'string' ? JSON.parse(result) : result;
+                            if (success && resultObj && resultObj.success) {
+                                _this.showMessage(resultObj.message || "文件保存成功", "success", true);
+                            } else {
+                                var errorMsg = resultObj && resultObj.error ? resultObj.error : (result || "文件保存失败");
+                                _this.showMessage(errorMsg, "error", true);
+                            }
+                        } catch (e) {
+                            // 如果解析失败，直接使用原始结果
+                            if (success) {
+                                _this.showMessage("文件保存成功", "success", true);
+                            } else {
+                                _this.showMessage("文件保存失败: " + (result || e.message), "error", true);
+                            }
+                        }
+                    }
+                );
+            } catch (err) {
+                _this.showMessage("保存文件时发生错误: " + err.message, "error", true);
+            }
+        },
+
+        //#region base64转文件下载（Web端使用）
         base64ToFile: function (base64, fileName) {
             var myBlob = this.dataURLtoBlob(base64, fileName);
             var myUrl = URL.createObjectURL(myBlob);
             this.downloadFile(myUrl, fileName);
+            // 延迟释放 URL，确保下载完成后再释放
+            setTimeout(() => {
+                URL.revokeObjectURL(myUrl);
+            }, 100);
         },
 
         dataURLtoBlob: function (dataurl, fileName) {
@@ -245,12 +305,30 @@ export default {
 
         downloadFile: function (url, name) {
             var a = document.createElement("a");
-            a.setAttribute("href", url);
-            a.setAttribute("download", name);
-            a.setAttribute("target", "_blank");
-            let clickEvent = document.createEvent("MouseEvents");
-            clickEvent.initEvent("click", true, true);
-            a.dispatchEvent(clickEvent);
+            a.href = url;
+            a.download = name;
+            a.style.display = "none";
+            
+            // 将元素添加到 DOM（某些环境要求元素在 DOM 中才能触发下载）
+            document.body.appendChild(a);
+            
+            // 使用现代的 click() 方法，兼容性更好
+            try {
+                a.click();
+            } catch (err) {
+                // 如果 click() 失败，尝试使用 MouseEvent（作为后备方案）
+                var clickEvent = new MouseEvent("click", {
+                    view: window,
+                    bubbles: true,
+                    cancelable: true
+                });
+                a.dispatchEvent(clickEvent);
+            }
+            
+            // 延迟移除元素，确保下载已触发
+            setTimeout(() => {
+                document.body.removeChild(a);
+            }, 100);
         },
 
         //检查是否为安全的base64字符串
