@@ -23,13 +23,20 @@ namespace WebApplication.UrlRoutingModule
             HttpApplication application = (HttpApplication)sender;
             HttpContext context = application.Context;
 
-            // 这里可以添加自定义的路由处理逻辑
-            // 例如，可以根据URL来决定是否重写URL或者转发请求到其他的处理程序
-
             string originalPath = context.Request.Path;
+
+            // 支持两种路径模式：
+            // 1. 旧版模式：static/js/..., static/css/..., static/fonts/..., static/img/...
+            // 2. 新版模式（Vue CLI 5）：js/..., css/..., fonts/..., img/...
             if (Regex.IsMatch(originalPath, @"static/(?:js|css|fonts|img)"))
             {
+                // 旧版模式：static/js/... -> /dist/static/js/...
                 context.RewritePath($"/dist/{originalPath}");
+            }
+            else if (Regex.IsMatch(originalPath, @"^/(?:js|css|fonts|img)/"))
+            {
+                // 新版模式：/js/... -> /dist/js/...
+                context.RewritePath($"/dist{originalPath}");
             }
         }
     }
