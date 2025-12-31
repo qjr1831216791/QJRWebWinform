@@ -93,4 +93,6 @@ yarn-error.log*
 # Config folders (exclude from version control)
 **/Config/
 src/**/Config/
+**/BaseData/
+src/**/BaseData/
 
