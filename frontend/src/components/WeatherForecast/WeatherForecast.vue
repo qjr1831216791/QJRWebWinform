@@ -188,50 +188,95 @@ export default {
             let _this = this;
             this.$set(this, "weatherLoading", true);
             this.$set(this, "weatherLoading", {});
-
-            this.jshelper
-                .ApiGet("WeatherForecast/GetWeatherForecast?citycode=" + this.input.city)
-                .then((res) => {
-                    if (_this.rtcrm.isNull(res)) {
-                        this.jshelper.openAlertDialog(this, "返回数据为空", "查询天气数据失败");
-                        return;
-                    }
-                    if (!_this.rtcrm.isNull(res.data) && res.isSuccess) {
-                        let data = res.data.result;
-                        if (!_this.rtcrm.isNull(data)) {
-                            _this.$set(_this, "weatherData", data);
-
-                            //记录当前城市
-                            if (_this.rtcrm.isNullOrWhiteSpace(_this.input.city)) {
-                                _this.$set(_this.input, "cityMulySelect", ["9999999", _this.weatherData.location.id]);
-                            }
-
-                            _this.$set(_this, "weatherLoading", false);
-                            _this.$set(_this.input, "city", _this.weatherData.location.id);
-                            _this.weatherChartInit();
-
-                            //把查询的城市插入到历史记录中方便用户切换热门城市
-                            let mult = false;
-                            _this.HistoryTownShipData.children.forEach((item) => {
-                                if (item.value === _this.weatherData.location.id) {
-                                    mult = true;
-                                    return;
-                                }
-                            });
-                            if (!mult) _this.HistoryTownShipData.children.push({
-                                label: _this.weatherData.location.city,
-                                value: _this.weatherData.location.id,
-                            });
+            const apiMode = this.jshelper._getApiMode();
+            if (apiMode === 'nativehost') {
+                this.jshelper.invokeHiddenApiAsync("new_hbxn_common", "WeatherForecast/GetWeatherForecast", { citycode: this.input.city })
+                    .then((res) => {
+                        if (_this.rtcrm.isNull(res)) {
+                            this.jshelper.openAlertDialog(this, "返回数据为空", "查询天气数据失败");
+                            return;
                         }
-                    } else {
-                        this.jshelper.openAlertDialog(this, res.message, "查询天气数据失败");
-                    }
-                    _this.$set(_this, "publicKey", _this.publicKey + 1); //刷新
-                    // console.log(res);
-                })
-                .catch((err) => {
-                    _this.jshelper.openAlertDialog(_this, err.message, "查询天气数据失败");
-                });
+                        if (!_this.rtcrm.isNull(res.data) && res.isSuccess) {
+                            let data = res.data.result;
+                            if (!_this.rtcrm.isNull(data)) {
+                                _this.$set(_this, "weatherData", data);
+
+                                //记录当前城市
+                                if (_this.rtcrm.isNullOrWhiteSpace(_this.input.city)) {
+                                    _this.$set(_this.input, "cityMulySelect", ["9999999", _this.weatherData.location.id]);
+                                }
+
+                                _this.$set(_this, "weatherLoading", false);
+                                _this.$set(_this.input, "city", _this.weatherData.location.id);
+                                _this.weatherChartInit();
+
+                                //把查询的城市插入到历史记录中方便用户切换热门城市
+                                let mult = false;
+                                _this.HistoryTownShipData.children.forEach((item) => {
+                                    if (item.value === _this.weatherData.location.id) {
+                                        mult = true;
+                                        return;
+                                    }
+                                });
+                                if (!mult) _this.HistoryTownShipData.children.push({
+                                    label: _this.weatherData.location.city,
+                                    value: _this.weatherData.location.id,
+                                });
+                            }
+                        } else {
+                            this.jshelper.openAlertDialog(this, res.message, "查询天气数据失败");
+                        }
+                        _this.$set(_this, "publicKey", _this.publicKey + 1); //刷新
+                        // console.log(res);
+                    })
+                    .catch((err) => {
+                        _this.jshelper.openAlertDialog(_this, err.message, "查询天气数据失败");
+                    });
+            }
+            else {
+                this.jshelper.ApiGet("WeatherForecast/GetWeatherForecast?citycode=" + this.input.city)
+                    .then((res) => {
+                        if (_this.rtcrm.isNull(res)) {
+                            this.jshelper.openAlertDialog(this, "返回数据为空", "查询天气数据失败");
+                            return;
+                        }
+                        if (!_this.rtcrm.isNull(res.data) && res.isSuccess) {
+                            let data = res.data.result;
+                            if (!_this.rtcrm.isNull(data)) {
+                                _this.$set(_this, "weatherData", data);
+
+                                //记录当前城市
+                                if (_this.rtcrm.isNullOrWhiteSpace(_this.input.city)) {
+                                    _this.$set(_this.input, "cityMulySelect", ["9999999", _this.weatherData.location.id]);
+                                }
+
+                                _this.$set(_this, "weatherLoading", false);
+                                _this.$set(_this.input, "city", _this.weatherData.location.id);
+                                _this.weatherChartInit();
+
+                                //把查询的城市插入到历史记录中方便用户切换热门城市
+                                let mult = false;
+                                _this.HistoryTownShipData.children.forEach((item) => {
+                                    if (item.value === _this.weatherData.location.id) {
+                                        mult = true;
+                                        return;
+                                    }
+                                });
+                                if (!mult) _this.HistoryTownShipData.children.push({
+                                    label: _this.weatherData.location.city,
+                                    value: _this.weatherData.location.id,
+                                });
+                            }
+                        } else {
+                            this.jshelper.openAlertDialog(this, res.message, "查询天气数据失败");
+                        }
+                        _this.$set(_this, "publicKey", _this.publicKey + 1); //刷新
+                        // console.log(res);
+                    })
+                    .catch((err) => {
+                        _this.jshelper.openAlertDialog(_this, err.message, "查询天气数据失败");
+                    });
+            }
         },
 
         //天气预报图表初始化
@@ -344,30 +389,57 @@ export default {
             this.$set(this, "weatherLoading", true);
             this.$set(this, "BaiduMapTownShipData", []);
 
-            this.jshelper
-                .ApiGet("WeatherForecast/GetBaiduMapTownShip")
-                .then((res) => {
-                    if (_this.rtcrm.isNull(res)) {
-                        this.jshelper.openAlertDialog(this, "返回数据为空", "获取百度地图行政区域数据失败");
-                        return;
-                    }
-                    if (!_this.rtcrm.isNull(res.data) && res.isSuccess) {
-                        let data = res.data;
-                        if (!_this.rtcrm.isNull(data)) {
-                            _this.$set(_this, "BaiduMapTownShipData", data);
-                            _this.$set(_this, "weatherLoading", false);
-                            _this.getData();//查询当前城市的天气数据
+            const apiMode = this.jshelper._getApiMode();
+            if (apiMode === 'nativehost') {
+                this.jshelper.invokeHiddenApiAsync("new_hbxn_common", "WeatherForecast/GetBaiduMapTownShip", null)
+                    .then((res) => {
+                        if (_this.rtcrm.isNull(res)) {
+                            this.jshelper.openAlertDialog(this, "返回数据为空", "获取百度地图行政区域数据失败");
+                            return;
                         }
-                        else {
+                        if (!_this.rtcrm.isNull(res.data) && res.isSuccess) {
+                            let data = res.data;
+                            if (!_this.rtcrm.isNull(data)) {
+                                _this.$set(_this, "BaiduMapTownShipData", data);
+                                _this.$set(_this, "weatherLoading", false);
+                                _this.getData();//查询当前城市的天气数据
+                            }
+                            else {
+                                this.jshelper.openAlertDialog(this, res.message, "获取百度地图行政区域数据失败");
+                            }
+                        } else {
                             this.jshelper.openAlertDialog(this, res.message, "获取百度地图行政区域数据失败");
                         }
-                    } else {
-                        this.jshelper.openAlertDialog(this, res.message, "获取百度地图行政区域数据失败");
-                    }
-                })
-                .catch((err) => {
-                    _this.jshelper.openAlertDialog(_this, err.message, "获取百度地图行政区域数据失败");
-                });
+                    })
+                    .catch((err) => {
+                        _this.jshelper.openAlertDialog(_this, err.message, "获取百度地图行政区域数据失败");
+                    });
+            }
+            else {
+                this.jshelper.ApiGet("WeatherForecast/GetBaiduMapTownShip")
+                    .then((res) => {
+                        if (_this.rtcrm.isNull(res)) {
+                            this.jshelper.openAlertDialog(this, "返回数据为空", "获取百度地图行政区域数据失败");
+                            return;
+                        }
+                        if (!_this.rtcrm.isNull(res.data) && res.isSuccess) {
+                            let data = res.data;
+                            if (!_this.rtcrm.isNull(data)) {
+                                _this.$set(_this, "BaiduMapTownShipData", data);
+                                _this.$set(_this, "weatherLoading", false);
+                                _this.getData();//查询当前城市的天气数据
+                            }
+                            else {
+                                this.jshelper.openAlertDialog(this, res.message, "获取百度地图行政区域数据失败");
+                            }
+                        } else {
+                            this.jshelper.openAlertDialog(this, res.message, "获取百度地图行政区域数据失败");
+                        }
+                    })
+                    .catch((err) => {
+                        _this.jshelper.openAlertDialog(_this, err.message, "获取百度地图行政区域数据失败");
+                    });
+            }
         },
 
         //城市点击切换事件

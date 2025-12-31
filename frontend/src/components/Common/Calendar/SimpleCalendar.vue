@@ -310,28 +310,53 @@ export default {
             let _this = this;
             let currentDateStr = this.rtcrm.formatDate(currentDate, "yyyy-MM-dd");
 
-            this.jshelper
-                .ApiGet("Holiday/GetHolidayList?date=" + currentDateStr)
-                .then((res) => {
-                    if (_this.rtcrm.isNull(res)) {
-                        this.jshelper.openAlertDialog(this, "返回数据为空", "查询节假日数据失败");
-                        return;
-                    }
-                    if (res.isSuccess) {
-                        if (!_this.rtcrm.isNull(res.data)) {
-                            let data = res.data;
-                            if (!_this.rtcrm.isNull(data)) {
-                                _this.$set(_this, "holidays", data);
-                                _this.days = _this.getPickerData(_this.currentDate) // 默认当前日期初始化日历
-                            }
+            const apiMode = this.jshelper._getApiMode();
+            if (apiMode === 'nativehost') {
+                this.jshelper.invokeHiddenApiAsync("new_hbxn_common", "Holiday/GetHolidayList", { date: currentDateStr })
+                    .then((res) => {
+                        if (_this.rtcrm.isNull(res)) {
+                            this.jshelper.openAlertDialog(this, "返回数据为空", "查询节假日数据失败");
+                            return;
                         }
-                    } else {
-                        this.jshelper.openAlertDialog(this, res.message, "查询节假日数据失败");
-                    }
-                })
-                .catch((err) => {
-                    _this.jshelper.openAlertDialog(_this, err.message, "查询节假日数据失败");
-                });
+                        if (res.isSuccess) {
+                            if (!_this.rtcrm.isNull(res.data)) {
+                                let data = res.data;
+                                if (!_this.rtcrm.isNull(data)) {
+                                    _this.$set(_this, "holidays", data);
+                                    _this.days = _this.getPickerData(_this.currentDate) // 默认当前日期初始化日历
+                                }
+                            }
+                        } else {
+                            this.jshelper.openAlertDialog(this, res.message, "查询节假日数据失败");
+                        }
+                    })
+                    .catch((err) => {
+                        _this.jshelper.openAlertDialog(_this, err.message, "查询节假日数据失败");
+                    });
+            }
+            else {
+                this.jshelper.ApiGet("Holiday/GetHolidayList?date=" + currentDateStr)
+                    .then((res) => {
+                        if (_this.rtcrm.isNull(res)) {
+                            this.jshelper.openAlertDialog(this, "返回数据为空", "查询节假日数据失败");
+                            return;
+                        }
+                        if (res.isSuccess) {
+                            if (!_this.rtcrm.isNull(res.data)) {
+                                let data = res.data;
+                                if (!_this.rtcrm.isNull(data)) {
+                                    _this.$set(_this, "holidays", data);
+                                    _this.days = _this.getPickerData(_this.currentDate) // 默认当前日期初始化日历
+                                }
+                            }
+                        } else {
+                            this.jshelper.openAlertDialog(this, res.message, "查询节假日数据失败");
+                        }
+                    })
+                    .catch((err) => {
+                        _this.jshelper.openAlertDialog(_this, err.message, "查询节假日数据失败");
+                    });
+            }
         },
 
         /**
@@ -343,28 +368,53 @@ export default {
             let _this = this;
             let currentDateStr = this.rtcrm.formatDate(currentDate, "yyyy-MM-dd");
 
-            this.jshelper
-                .ApiGet("Holiday/GetAnniversaryList?date=" + currentDateStr)
-                .then((res) => {
-                    if (_this.rtcrm.isNull(res)) {
-                        this.jshelper.openAlertDialog(this, "返回数据为空", "查询纪念日数据失败");
-                        return;
-                    }
-                    if (res.isSuccess) {
-                        if (!_this.rtcrm.isNull(res.data)) {
-                            let data = res.data;
-                            if (!_this.rtcrm.isNull(data)) {
-                                _this.$set(_this, "anniversarys", data);
-                                _this.days = _this.getPickerData(_this.currentDate) // 默认当前日期初始化日历
-                            }
+            const apiMode = this.jshelper._getApiMode();
+            if (apiMode === 'nativehost') {
+                this.jshelper.invokeHiddenApiAsync("new_hbxn_common", "Holiday/GetAnniversaryList", { date: currentDateStr })
+                    .then((res) => {
+                        if (_this.rtcrm.isNull(res)) {
+                            this.jshelper.openAlertDialog(this, "返回数据为空", "查询纪念日数据失败");
+                            return;
                         }
-                    } else {
-                        this.jshelper.openAlertDialog(this, res.message, "查询纪念日数据失败");
-                    }
-                })
-                .catch((err) => {
-                    _this.jshelper.openAlertDialog(_this, err.message, "查询纪念日数据失败");
-                });
+                        if (res.isSuccess) {
+                            if (!_this.rtcrm.isNull(res.data)) {
+                                let data = res.data;
+                                if (!_this.rtcrm.isNull(data)) {
+                                    _this.$set(_this, "anniversarys", data);
+                                    _this.days = _this.getPickerData(_this.currentDate) // 默认当前日期初始化日历
+                                }
+                            }
+                        } else {
+                            this.jshelper.openAlertDialog(this, res.message, "查询纪念日数据失败");
+                        }
+                    })
+                    .catch((err) => {
+                        _this.jshelper.openAlertDialog(_this, err.message, "查询纪念日数据失败");
+                    });
+            }
+            else {
+                this.jshelper.ApiGet("Holiday/GetAnniversaryList?date=" + currentDateStr)
+                    .then((res) => {
+                        if (_this.rtcrm.isNull(res)) {
+                            this.jshelper.openAlertDialog(this, "返回数据为空", "查询纪念日数据失败");
+                            return;
+                        }
+                        if (res.isSuccess) {
+                            if (!_this.rtcrm.isNull(res.data)) {
+                                let data = res.data;
+                                if (!_this.rtcrm.isNull(data)) {
+                                    _this.$set(_this, "anniversarys", data);
+                                    _this.days = _this.getPickerData(_this.currentDate) // 默认当前日期初始化日历
+                                }
+                            }
+                        } else {
+                            this.jshelper.openAlertDialog(this, res.message, "查询纪念日数据失败");
+                        }
+                    })
+                    .catch((err) => {
+                        _this.jshelper.openAlertDialog(_this, err.message, "查询纪念日数据失败");
+                    });
+            }
         },
 
         dayClass(day) {

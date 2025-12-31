@@ -49,24 +49,48 @@ export default {
         TestAPIRun: function () {
             this.$set(this, "testResult", null);
             this.jshelper.showLoading();
-            this.jshelper.ApiGet("Default/TestAPIRun").then((resp) => {
-                this.$set(this, "testResult", JSON.stringify(resp));
-            }).catch(e => {
-                this.$set(this, "testResult", JSON.stringify(e));
-            }).finally(() => {
-                this.jshelper.closeLoading();
-            });
+            const apiMode = this.jshelper._getApiMode();
+            if (apiMode === 'nativehost') {
+                this.jshelper.invokeHiddenApiAsync("new_hbxn_common", "Default/TestAPIRun", null).then((resp) => {
+                    this.$set(this, "testResult", JSON.stringify(resp));
+                }).catch(e => {
+                    this.$set(this, "testResult", JSON.stringify(e));
+                }).finally(() => {
+                    this.jshelper.closeLoading();
+                });
+            }
+            else {
+                this.jshelper.ApiGet("Default/TestAPIRun").then((resp) => {
+                    this.$set(this, "testResult", JSON.stringify(resp));
+                }).catch(e => {
+                    this.$set(this, "testResult", JSON.stringify(e));
+                }).finally(() => {
+                    this.jshelper.closeLoading();
+                });
+            }
         },
         TestCRMService: function () {
             this.$set(this, "testResult", null);
             this.jshelper.showLoading();
-            this.jshelper.ApiGet("Default/TestCRMService").then((resp) => {
-                this.$set(this, "testResult", JSON.stringify(resp));
-            }).catch(e => {
-                this.$set(this, "testResult", JSON.stringify(e));
-            }).finally(() => {
-                this.jshelper.closeLoading();
-            });
+            const apiMode = this.jshelper._getApiMode();
+            if (apiMode === 'nativehost') {
+                this.jshelper.invokeHiddenApiAsync("new_hbxn_common", "Default/TestCRMService", null).then((resp) => {
+                    this.$set(this, "testResult", JSON.stringify(resp));
+                }).catch(e => {
+                    this.$set(this, "testResult", JSON.stringify(e));
+                }).finally(() => {
+                    this.jshelper.closeLoading();
+                });
+            }
+            else {
+                this.jshelper.ApiGet("Default/TestCRMService").then((resp) => {
+                    this.$set(this, "testResult", JSON.stringify(resp));
+                }).catch(e => {
+                    this.$set(this, "testResult", JSON.stringify(e));
+                }).finally(() => {
+                    this.jshelper.closeLoading();
+                });
+            }
         },
         TestAPIPost: function () {
             this.$set(this, "testResult", null);

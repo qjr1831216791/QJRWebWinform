@@ -22,15 +22,46 @@ namespace QJRWebWinform.WPF.Controllers
         public override string Name => "Default";
 
         /// <summary>
-        /// 测试API是否联通
+        /// 测试API是否联通（核心业务逻辑）
         /// </summary>
         /// <param name="parameters">JSON参数：null 或 "{}"</param>
-        public virtual object TestAPIRun(string parameters)
+        private ResultModel TestAPIRunCore(string parameters)
         {
             SetParameters(parameters);
             ResultModel result = new ResultModel();
             result.Success(message: "API is running.");
             return result;
+        }
+
+        /// <summary>
+        /// 测试API是否联通（同步版本）
+        /// </summary>
+        /// <param name="parameters">JSON参数：null 或 "{}"</param>
+        public virtual object TestAPIRun(string parameters)
+        {
+            return TestAPIRunCore(parameters);
+        }
+
+        /// <summary>
+        /// 测试API是否联通（异步版本）
+        /// </summary>
+        /// <param name="parameters">JSON参数：null 或 "{}"</param>
+        /// <param name="callback">JavaScript 回调函数</param>
+        public virtual void TestAPIRun(string parameters, IJavascriptCallback callback)
+        {
+            Task.Run(() =>
+            {
+                try
+                {
+                    var result = TestAPIRunCore(parameters);
+                    var resultJson = JsonConvert.SerializeObject(result);
+                    callback.ExecuteAsync(true, resultJson);
+                }
+                catch (Exception ex)
+                {
+                    callback.ExecuteAsync(false, ex.Message);
+                }
+            });
         }
 
         /// <summary>
@@ -76,10 +107,10 @@ namespace QJRWebWinform.WPF.Controllers
         }
 
         /// <summary>
-        /// 测试日志功能是否正常
+        /// 测试日志功能是否正常（核心业务逻辑）
         /// </summary>
         /// <param name="parameters">JSON参数：{"level": "string", "message": "string"}</param>
-        public virtual object TestLogTrace(string parameters)
+        private ResultModel TestLogTraceCore(string parameters)
         {
             var input = DeserializeParameters<TestLogTraceInput>(parameters);
             SetParameters(parameters);
@@ -87,11 +118,42 @@ namespace QJRWebWinform.WPF.Controllers
         }
 
         /// <summary>
-        /// 测试API Post入参-单个基础属性
+        /// 测试日志功能是否正常（同步版本）
+        /// </summary>
+        /// <param name="parameters">JSON参数：{"level": "string", "message": "string"}</param>
+        public virtual object TestLogTrace(string parameters)
+        {
+            return TestLogTraceCore(parameters);
+        }
+
+        /// <summary>
+        /// 测试日志功能是否正常（异步版本）
+        /// </summary>
+        /// <param name="parameters">JSON参数：{"level": "string", "message": "string"}</param>
+        /// <param name="callback">JavaScript 回调函数</param>
+        public virtual void TestLogTrace(string parameters, IJavascriptCallback callback)
+        {
+            Task.Run(() =>
+            {
+                try
+                {
+                    var result = TestLogTraceCore(parameters);
+                    var resultJson = JsonConvert.SerializeObject(result);
+                    callback.ExecuteAsync(true, resultJson);
+                }
+                catch (Exception ex)
+                {
+                    callback.ExecuteAsync(false, ex.Message);
+                }
+            });
+        }
+
+        /// <summary>
+        /// 测试API Post入参-单个基础属性（核心业务逻辑）
         /// </summary>
         /// <param name="parameters">JSON参数：{"input": "string"}</param>
         /// <returns></returns>
-        public virtual object TestAPIPost(string parameters)
+        private ResultModel TestAPIPostCore(string parameters)
         {
             var input = DeserializeParameters<TestAPIPostInput>(parameters);
             ResultModel result = new ResultModel();
@@ -100,11 +162,43 @@ namespace QJRWebWinform.WPF.Controllers
         }
 
         /// <summary>
-        /// 测试API Post入参2-多个基础属性
+        /// 测试API Post入参-单个基础属性（同步版本）
+        /// </summary>
+        /// <param name="parameters">JSON参数：{"input": "string"}</param>
+        /// <returns></returns>
+        public virtual object TestAPIPost(string parameters)
+        {
+            return TestAPIPostCore(parameters);
+        }
+
+        /// <summary>
+        /// 测试API Post入参-单个基础属性（异步版本）
+        /// </summary>
+        /// <param name="parameters">JSON参数：{"input": "string"}</param>
+        /// <param name="callback">JavaScript 回调函数</param>
+        public virtual void TestAPIPost(string parameters, IJavascriptCallback callback)
+        {
+            Task.Run(() =>
+            {
+                try
+                {
+                    var result = TestAPIPostCore(parameters);
+                    var resultJson = JsonConvert.SerializeObject(result);
+                    callback.ExecuteAsync(true, resultJson);
+                }
+                catch (Exception ex)
+                {
+                    callback.ExecuteAsync(false, ex.Message);
+                }
+            });
+        }
+
+        /// <summary>
+        /// 测试API Post入参2-多个基础属性（核心业务逻辑）
         /// </summary>
         /// <param name="parameters">JSON参数：{"input": "string", "input2": "string"}</param>
         /// <returns></returns>
-        public virtual object TestAPIPost2(string parameters)
+        private ResultModel TestAPIPost2Core(string parameters)
         {
             var input = DeserializeParameters<TestAPIPost2Input>(parameters);
             ResultModel result = new ResultModel();
@@ -113,16 +207,80 @@ namespace QJRWebWinform.WPF.Controllers
         }
 
         /// <summary>
-        /// 测试API Post入参3-复杂参数
+        /// 测试API Post入参2-多个基础属性（同步版本）
+        /// </summary>
+        /// <param name="parameters">JSON参数：{"input": "string", "input2": "string"}</param>
+        /// <returns></returns>
+        public virtual object TestAPIPost2(string parameters)
+        {
+            return TestAPIPost2Core(parameters);
+        }
+
+        /// <summary>
+        /// 测试API Post入参2-多个基础属性（异步版本）
+        /// </summary>
+        /// <param name="parameters">JSON参数：{"input": "string", "input2": "string"}</param>
+        /// <param name="callback">JavaScript 回调函数</param>
+        public virtual void TestAPIPost2(string parameters, IJavascriptCallback callback)
+        {
+            Task.Run(() =>
+            {
+                try
+                {
+                    var result = TestAPIPost2Core(parameters);
+                    var resultJson = JsonConvert.SerializeObject(result);
+                    callback.ExecuteAsync(true, resultJson);
+                }
+                catch (Exception ex)
+                {
+                    callback.ExecuteAsync(false, ex.Message);
+                }
+            });
+        }
+
+        /// <summary>
+        /// 测试API Post入参3-复杂参数（核心业务逻辑）
         /// </summary>
         /// <param name="parameters">JSON参数：TestAPIPost3Model 对象</param>
         /// <returns></returns>
-        public virtual object TestAPIPost3(string parameters)
+        private ResultModel TestAPIPost3Core(string parameters)
         {
             var input = DeserializeParameters<TestAPIPost3Model>(parameters);
             ResultModel result = new ResultModel();
             result.Success(message: $"Input is：{JsonConvert.SerializeObject(input)}");
             return result;
+        }
+
+        /// <summary>
+        /// 测试API Post入参3-复杂参数（同步版本）
+        /// </summary>
+        /// <param name="parameters">JSON参数：TestAPIPost3Model 对象</param>
+        /// <returns></returns>
+        public virtual object TestAPIPost3(string parameters)
+        {
+            return TestAPIPost3Core(parameters);
+        }
+
+        /// <summary>
+        /// 测试API Post入参3-复杂参数（异步版本）
+        /// </summary>
+        /// <param name="parameters">JSON参数：TestAPIPost3Model 对象</param>
+        /// <param name="callback">JavaScript 回调函数</param>
+        public virtual void TestAPIPost3(string parameters, IJavascriptCallback callback)
+        {
+            Task.Run(() =>
+            {
+                try
+                {
+                    var result = TestAPIPost3Core(parameters);
+                    var resultJson = JsonConvert.SerializeObject(result);
+                    callback.ExecuteAsync(true, resultJson);
+                }
+                catch (Exception ex)
+                {
+                    callback.ExecuteAsync(false, ex.Message);
+                }
+            });
         }
 
         /// <summary>

@@ -102,6 +102,12 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="BaseData\Anniversary.date.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="BaseData\BaiduMap_Township_Area.xlsx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="Config\Baidu.Map.Config.xml.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
