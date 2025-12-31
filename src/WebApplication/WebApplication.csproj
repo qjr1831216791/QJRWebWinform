@@ -267,27 +267,6 @@
     <Content Include="Areas\HelpPage\Views\Help\DisplayTemplates\CollectionModelDescription.cshtml" />
     <Content Include="Areas\HelpPage\Views\Help\DisplayTemplates\ApiGroup.cshtml" />
     <Content Include="Areas\HelpPage\Views\Help\Api.cshtml" />
-    <Content Include="Config\Environments.CrmClient.Config.CrmConfig.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Config\RekTec.XStudio.CrmClient.Config.CrmConfig.xml.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Config\Baidu.Map.Config.xml.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="BaseData\BaiduMap_Township_Area.xlsx">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Config\ThinkAPI.Config.xml.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="BaseData\Anniversary.date.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Config\Log.Config.xml.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
     <None Include="Scripts\jquery-3.7.0.intellisense.js" />
     <Content Include="Scripts\jquery-3.7.0.js" />
     <Content Include="Scripts\jquery-3.7.0.min.js" />
@@ -438,13 +417,28 @@
   </ProjectExtensions>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
-      <ErrorText>这台计算机上缺少此项目引用的 NuGet 程序包。使用“NuGet 程序包还原”可下载这些程序包。有关更多信息，请参见 http://go.microsoft.com/fwlink/?LinkID=322105。缺少的文件是 {0}。</ErrorText>
+      <ErrorText>这台计算机上缺少此项目引用的 NuGet 程序包。使用"NuGet 程序包还原"可下载这些程序包。有关更多信息，请参见 http://go.microsoft.com/fwlink/?LinkID=322105。缺少的文件是 {0}。</ErrorText>
     </PropertyGroup>
   </Target>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
+  <!-- 使用构建后目标复制 BaseData 和 Config 目录，从集中位置复制到输出目录 -->
+  <Target Name="CopySharedDataFiles" AfterTargets="AfterBuild" Condition="Exists('$(SolutionDir)src\SharedData')">
+    <ItemGroup>
+      <BaseDataFiles Include="$(SolutionDir)src\SharedData\BaseData\**\*" />
+      <ConfigFiles Include="$(SolutionDir)src\SharedData\Config\**\*" />
+    </ItemGroup>
+    <Message Text="Copying BaseData and Config files to output directory ($(Configuration))..." Importance="normal" />
+    <!-- 先删除输出目录中的旧文件，确保完全同步 -->
+    <RemoveDir Directories="$(OutDir)BaseData" Condition="Exists('$(OutDir)BaseData')" />
+    <RemoveDir Directories="$(OutDir)Config" Condition="Exists('$(OutDir)Config')" />
+    <!-- 复制所有文件，不使用 SkipUnchangedFiles 以确保文件始终更新 -->
+    <Copy SourceFiles="@(BaseDataFiles)" DestinationFiles="@(BaseDataFiles->'$(OutDir)BaseData\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="false" ContinueOnError="true" />
+    <Copy SourceFiles="@(ConfigFiles)" DestinationFiles="@(ConfigFiles->'$(OutDir)Config\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="false" ContinueOnError="true" />
+    <Message Text="Copied @(BaseDataFiles->Count()) BaseData files and @(ConfigFiles->Count()) Config files to output directory" Importance="normal" />
   </Target>
-  <Target Name="AfterBuild">
-  </Target> -->
+  <!-- 在清理时也删除输出目录中的 BaseData 和 Config -->
+  <Target Name="CleanSharedDataFiles" AfterTargets="Clean">
+    <Message Text="Cleaning BaseData and Config from output directory..." Importance="normal" />
+    <RemoveDir Directories="$(OutDir)BaseData" Condition="Exists('$(OutDir)BaseData')" />
+    <RemoveDir Directories="$(OutDir)Config" Condition="Exists('$(OutDir)Config')" />
+  </Target>
 </Project>

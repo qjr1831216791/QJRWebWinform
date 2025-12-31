@@ -96,24 +96,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <Content Include="Config\Baidu.Map.Config.xml.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Config\Environments.CrmClient.Config.CrmConfig.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Config\RekTec.XStudio.CrmClient.Config.CrmConfig.xml.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="BaseData\BaiduMap_Township_Area.xlsx">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Config\ThinkAPI.Config.xml.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Config\Log.Config.xml.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -143,4 +125,25 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- 使用构建后目标复制 BaseData 和 Config 目录，从集中位置复制到输出目录 -->
+  <Target Name="CopySharedDataFiles" AfterTargets="AfterBuild" Condition="Exists('$(SolutionDir)src\SharedData')">
+    <ItemGroup>
+      <BaseDataFiles Include="$(SolutionDir)src\SharedData\BaseData\**\*" />
+      <ConfigFiles Include="$(SolutionDir)src\SharedData\Config\**\*" />
+    </ItemGroup>
+    <Message Text="Copying BaseData and Config files to output directory ($(Configuration))..." Importance="normal" />
+    <!-- 先删除输出目录中的旧文件，确保完全同步 -->
+    <RemoveDir Directories="$(OutDir)BaseData" Condition="Exists('$(OutDir)BaseData')" />
+    <RemoveDir Directories="$(OutDir)Config" Condition="Exists('$(OutDir)Config')" />
+    <!-- 复制所有文件，不使用 SkipUnchangedFiles 以确保文件始终更新 -->
+    <Copy SourceFiles="@(BaseDataFiles)" DestinationFiles="@(BaseDataFiles->'$(OutDir)BaseData\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="false" ContinueOnError="true" />
+    <Copy SourceFiles="@(ConfigFiles)" DestinationFiles="@(ConfigFiles->'$(OutDir)Config\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="false" ContinueOnError="true" />
+    <Message Text="Copied @(BaseDataFiles->Count()) BaseData files and @(ConfigFiles->Count()) Config files to output directory" Importance="normal" />
+  </Target>
+  <!-- 在清理时也删除输出目录中的 BaseData 和 Config -->
+  <Target Name="CleanSharedDataFiles" AfterTargets="Clean">
+    <Message Text="Cleaning BaseData and Config from output directory..." Importance="normal" />
+    <RemoveDir Directories="$(OutDir)BaseData" Condition="Exists('$(OutDir)BaseData')" />
+    <RemoveDir Directories="$(OutDir)Config" Condition="Exists('$(OutDir)Config')" />
+  </Target>
 </Project>
