@@ -14,6 +14,7 @@
     <WarningLevel>4</WarningLevel>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
+    <RuntimeIdentifiers>win;win-x86;win-x64</RuntimeIdentifiers>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -111,8 +112,8 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="CefSharp.Wpf" Version="120.1.110" />
-    <PackageReference Include="CefSharp.Common" Version="120.1.110" />
+    <PackageReference Include="CefSharp.Wpf" Version="143.0.90" />
+    <PackageReference Include="CefSharp.Common" Version="143.0.90" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
   <ItemGroup>
