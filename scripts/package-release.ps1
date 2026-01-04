@@ -44,6 +44,9 @@ $specificFiles = @(
     "QJRWebWinform.WPF.exe",
     "QJRWebWinform.WPF.exe.config",
     
+    # 应用程序图标
+    "app.ico",
+    
     # CefSharp 子进程
     "CefSharp.BrowserSubprocess.exe",
     

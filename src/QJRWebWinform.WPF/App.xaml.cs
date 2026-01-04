@@ -1,3 +1,5 @@
+using System.IO;
+using System.Reflection;
 using System.Windows;
 using CefSharp;
 using CefSharp.Wpf;
@@ -18,6 +20,16 @@ namespace QJRWebWinform.WPF
 
             // 初始化 CefSharp
             CefSettings settings = new CefSettings();
+            
+            // 设置缓存路径（必须设置，避免进程单例行为问题）
+            string appPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            string cachePath = Path.Combine(appPath, "CefCache");
+            if (!Directory.Exists(cachePath))
+            {
+                Directory.CreateDirectory(cachePath);
+            }
+            settings.RootCachePath = cachePath;
+            
             // 设置用户数据目录（可选）
             // settings.UserDataPath = "CefSharpData";
             
