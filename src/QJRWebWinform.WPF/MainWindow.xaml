@@ -4,7 +4,8 @@
         xmlns:cefSharp="clr-namespace:CefSharp.Wpf;assembly=CefSharp.Wpf"
         Title="QJR Web Winform" Height="600" Width="900"
         WindowStartupLocation="CenterScreen"
-        KeyDown="Window_KeyDown">
+        KeyDown="Window_KeyDown"
+        Icon="app.ico">
     <Grid>
         <cefSharp:ChromiumWebBrowser 
             x:Name="WebBrowser"
