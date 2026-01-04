@@ -423,7 +423,6 @@ namespace APIService.SyncConfiguration
             {
                 throw ex;
             }
-            return result;
         }
 
         /// <summary>
