@@ -16,8 +16,14 @@ using WebApplication.Areas.HelpPage.Models;
 
 namespace WebApplication.Areas.HelpPage
 {
+    /// <summary>
+    /// 帮助页面配置扩展类，提供用于配置帮助页面的扩展方法
+    /// </summary>
     public static class HelpPageConfigurationExtensions
     {
+        /// <summary>
+        /// API模型前缀常量，用于在配置属性中标识API模型
+        /// </summary>
         private const string ApiModelPrefix = "MS_HelpPageApiModel_";
 
         /// <summary>

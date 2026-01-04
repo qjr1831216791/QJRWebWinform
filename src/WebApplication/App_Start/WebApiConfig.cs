@@ -7,8 +7,15 @@ using System.Web.Mvc;
 
 namespace WebApplication
 {
+    /// <summary>
+    /// Web API配置类，用于配置Web API的路由和跨域设置
+    /// </summary>
     public static class WebApiConfig
     {
+        /// <summary>
+        /// 注册Web API配置，包括跨域支持和路由设置
+        /// </summary>
+        /// <param name="config">HTTP配置对象</param>
         public static void Register(HttpConfiguration config)
         {
             // Web API 配置和服务

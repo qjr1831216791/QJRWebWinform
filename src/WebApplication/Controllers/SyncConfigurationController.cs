@@ -11,9 +11,9 @@ namespace WebApplication.Controllers
     public class SyncConfigurationController : BaseController
     {
         /// <summary>
-        /// 获取环境参数
+        /// 获取环境参数列表
         /// </summary>
-        /// <returns></returns>
+        /// <returns>包含所有可用环境信息的结果模型</returns>
         [HttpPost]
         public virtual ResultModel GetEnvironments()
         {
@@ -21,17 +21,18 @@ namespace WebApplication.Controllers
         }
 
         /// <summary>
-        /// 获取系统配置
+        /// 根据日期范围获取系统配置，支持分页查询
         /// </summary>
-        /// <param name="envirFrom"></param>
-        /// <param name="envirTo"></param>
-        /// <param name="entityName"></param>
-        /// <param name="pageIndexEnvirFrom"></param>
-        /// <param name="pageSizeEnvirFrom"></param>
-        /// <param name="pageIndexEnvirTo"></param>
-        /// <param name="pageSizeEnvirTo"></param>
-        /// <param name="createdonRange"></param>
-        /// <returns></returns>
+        /// <param name="envirFrom">源环境标识</param>
+        /// <param name="envirTo">目标环境标识</param>
+        /// <param name="entityName">实体名称，支持new_languageconfig和new_data_languageconfig</param>
+        /// <param name="pageIndexEnvirFrom">源环境分页索引</param>
+        /// <param name="pageSizeEnvirFrom">源环境每页大小</param>
+        /// <param name="pageIndexEnvirTo">目标环境分页索引</param>
+        /// <param name="pageSizeEnvirTo">目标环境每页大小</param>
+        /// <param name="createdonRange">创建日期范围，格式：开始日期,结束日期</param>
+        /// <returns>包含系统配置列表的结果模型</returns>
+        /// <exception cref="Exception">当实体名称无法识别时抛出异常</exception>
         [HttpPost]
         public virtual ResultModel GetSystemConfigsByDateRange(string envirFrom, string envirTo, string entityName, int? pageIndexEnvirFrom, int? pageSizeEnvirFrom, int? pageIndexEnvirTo, int? pageSizeEnvirTo, string createdonRange)
         {
@@ -47,13 +48,13 @@ namespace WebApplication.Controllers
         }
 
         /// <summary>
-        /// 获取系统配置
+        /// 获取系统配置列表
         /// </summary>
-        /// <param name="envirFrom"></param>
-        /// <param name="envirTo"></param>
-        /// <param name="entityName"></param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
+        /// <param name="envirFrom">源环境标识</param>
+        /// <param name="envirTo">目标环境标识</param>
+        /// <param name="entityName">实体名称，支持：new_systemparameter、new_autonumber、new_sumrelationshipdetail、new_ribbon、new_duplicatedetect、commondeletecheck、new_import、documenttemplate、new_multiple_language_contrast</param>
+        /// <returns>包含系统配置列表的结果模型</returns>
+        /// <exception cref="Exception">当实体名称无法识别时抛出异常</exception>
         [HttpPost]
         public virtual ResultModel GetSystemConfigs(string envirFrom, string envirTo, string entityName)
         {
@@ -83,11 +84,11 @@ namespace WebApplication.Controllers
         }
 
         /// <summary>
-        /// 同步系统配置
+        /// 同步系统配置，将源环境的配置同步到目标环境
         /// </summary>
-        /// <param name="model"></param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
+        /// <param name="model">同步配置输入模型，包含环境标识、实体名称和配置列表</param>
+        /// <returns>同步操作的结果模型</returns>
+        /// <exception cref="Exception">当model为null或实体名称无法识别时抛出异常</exception>
         [HttpPost]
         public virtual ResultModel SyncSystemConfigs([FromBody] SyncSystemConfigsInput model)
         {
@@ -122,11 +123,11 @@ namespace WebApplication.Controllers
         }
 
         /// <summary>
-        /// 下载系统模板
+        /// 下载系统模板文件
         /// </summary>
-        /// <param name="envir"></param>
-        /// <param name="templateId"></param>
-        /// <returns></returns>
+        /// <param name="envir">环境标识</param>
+        /// <param name="templateId">模板ID</param>
+        /// <returns>包含模板文件数据的结果模型</returns>
         [HttpPost]
         public virtual ResultModel DownloadTemplate(string envir, string templateId)
         {

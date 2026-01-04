@@ -35,6 +35,9 @@ namespace CommonHelper.Model
             #endregion
         }
 
+        /// <summary>
+        /// 获取WebConfigModel的单例实例
+        /// </summary>
         public static WebConfigModel Instance
         {
             get
@@ -47,6 +50,9 @@ namespace CommonHelper.Model
             }
         }
 
+        /// <summary>
+        /// 环境配置列表，包含多个CRM环境的配置信息
+        /// </summary>
         public List<EnvironmentConfigModel> environment { get; } = new List<EnvironmentConfigModel>();
 
         /// <summary>
@@ -122,16 +128,28 @@ namespace CommonHelper.Model
     }
 
     /// <summary>
-    /// 多环境配置类-只读
+    /// 多环境配置类，用于存储单个CRM环境的配置信息（只读）
     /// </summary>
     public class EnvironmentConfigModel
     {
+        /// <summary>
+        /// 环境唯一标识键
+        /// </summary>
         public string key { get; }
 
+        /// <summary>
+        /// 环境显示名称
+        /// </summary>
         public string name { get; }
 
+        /// <summary>
+        /// 默认环境标识
+        /// </summary>
         public string defaultEnv { get; }
 
+        /// <summary>
+        /// 获取默认环境的连接字符串
+        /// </summary>
         public string defaultEnvConnectionString
         {
             get
@@ -143,8 +161,18 @@ namespace CommonHelper.Model
             }
         }
 
+        /// <summary>
+        /// 环境与连接字符串的映射字典，key为环境标识，value为连接字符串
+        /// </summary>
         public Dictionary<string, string> env { get; } = new Dictionary<string, string>();
 
+        /// <summary>
+        /// 构造函数
+        /// </summary>
+        /// <param name="key">环境唯一标识键</param>
+        /// <param name="name">环境显示名称</param>
+        /// <param name="defaultEnv">默认环境标识</param>
+        /// <param name="env">环境与连接字符串的映射字典</param>
         public EnvironmentConfigModel(string key, string name, string defaultEnv, Dictionary<string, string> env)
         {
             this.key = key;

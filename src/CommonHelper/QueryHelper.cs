@@ -49,12 +49,15 @@ namespace CommonHelper
         }
 
         /// <summary>
-        /// QueryEntity
+        /// 根据唯一名称查询单个实体记录
         /// </summary>
-        /// <param name="uniqueName">唯一名称</param>
-        /// <param name="entityName">实体名</param>
-        /// <param name="queryField">查询的字段</param>
-        /// <returns></returns>
+        /// <param name="organizationService">组织服务</param>
+        /// <param name="entityName">实体逻辑名</param>
+        /// <param name="uniqueName">唯一名称值</param>
+        /// <param name="queryField">查询字段的逻辑名，默认为"new_name"</param>
+        /// <param name="columnSet">要查询的字段数组，如果为null则只查询主键</param>
+        /// <param name="multiException">如果查询结果超过1条时抛出的异常信息，如果为null则不检查多条记录</param>
+        /// <returns>查询到的实体记录，如果未找到则返回null</returns>
         public static Entity QueryEntity(IOrganizationService organizationService, string entityName, object uniqueName, string queryField = "new_name", string[] columnSet = null, string multiException = null)
         {
             if (uniqueName == null) return null;
@@ -66,11 +69,14 @@ namespace CommonHelper
         }
 
         /// <summary>
-        /// QueryEntity 多条件
+        /// 根据多个条件查询单个实体记录
         /// </summary>
-        /// <param name="entityName">实体名称</param>
-        /// <param name="conditions">条件 key字段 value值</param>
-        /// <returns></returns>
+        /// <param name="organizationService">组织服务</param>
+        /// <param name="entityName">实体逻辑名</param>
+        /// <param name="conditions">查询条件字典，key为字段逻辑名，value为字段值，所有条件以AND连接</param>
+        /// <param name="columnSet">要查询的字段数组，如果为null则只查询主键</param>
+        /// <param name="multiException">如果查询结果超过1条时抛出的异常信息，如果为null则不检查多条记录</param>
+        /// <returns>查询到的实体记录，如果未找到则返回null</returns>
         public static Entity QueryEntity(IOrganizationService organizationService, string entityName, Dictionary<string, object> conditions = null, string[] columnSet = null, string multiException = null)
         {
             QueryExpression query = new QueryExpression(entityName);
@@ -106,12 +112,12 @@ namespace CommonHelper
         }
 
         /// <summary>
-        /// 获得实体对应的元数据信息
+        /// 获取实体的元数据信息，支持缓存以提高性能
         /// </summary>
-        /// <param name="service"></param>
-        /// <param name="entityLogicalName"></param>
-        /// <param name="entityFilters"></param>
-        /// <returns></returns>
+        /// <param name="service">组织服务</param>
+        /// <param name="entityLogicalName">实体逻辑名</param>
+        /// <param name="entityFilters">实体过滤器，指定要获取的元数据类型，默认为EntityFilters.Entity</param>
+        /// <returns>实体元数据对象</returns>
         public static EntityMetadata GetEntityMetadata(IOrganizationService service, string entityLogicalName, EntityFilters entityFilters = EntityFilters.Entity)
         {
             CacheHelper cacheHelper = CacheHelper.CreateInstance(service);
@@ -141,11 +147,13 @@ namespace CommonHelper
         }
 
         /// <summary>
-        /// QueryEntity 多条件
+        /// 根据多个条件查询多个实体记录
         /// </summary>
-        /// <param name="entityName">实体名称</param>
-        /// <param name="conditions">条件 key字段 value值</param>
-        /// <returns></returns>
+        /// <param name="organizationService">组织服务</param>
+        /// <param name="entityName">实体逻辑名</param>
+        /// <param name="conditions">查询条件字典，key为字段逻辑名，value为字段值，所有条件以AND连接</param>
+        /// <param name="columnSet">要查询的字段数组，如果为null则只查询主键</param>
+        /// <returns>查询到的实体记录集合，如果条件为空或未找到则返回null</returns>
         public static DataCollection<Entity> QueryEntites(IOrganizationService organizationService, string entityName, Dictionary<string, object> conditions, string[] columnSet = null)
         {
             if (conditions == null || conditions.Count == 0) return null;
@@ -164,11 +172,15 @@ namespace CommonHelper
         }
 
         /// <summary>
-        /// QueryEntity 多条件
+        /// 根据多个条件分页查询实体记录集合
         /// </summary>
-        /// <param name="entityName">实体名称</param>
-        /// <param name="conditions">条件 key字段 value值</param>
-        /// <returns></returns>
+        /// <param name="organizationService">组织服务</param>
+        /// <param name="entityName">实体逻辑名</param>
+        /// <param name="pageIndex">页码，从1开始</param>
+        /// <param name="pageSize">每页记录数</param>
+        /// <param name="conditions">查询条件字典，key为字段逻辑名，value为字段值，所有条件以AND连接，如果value为null则查询该字段为空的记录</param>
+        /// <param name="columnSet">要查询的字段数组，如果为null则只查询主键</param>
+        /// <returns>查询到的实体记录集合，如果条件为空则返回null</returns>
         public static EntityCollection QueryEntites(IOrganizationService organizationService, string entityName, int pageIndex, int pageSize, Dictionary<string, object> conditions, string[] columnSet = null)
         {
             if (conditions == null || conditions.Count == 0) return null;
@@ -192,11 +204,12 @@ namespace CommonHelper
         }
 
         /// <summary>
-        /// 获取币种信息
+        /// 获取语言信息，支持根据语言区域ID或语言代码查询
         /// </summary>
-        /// <param name="currency"></param>
-        /// <param name="OrganizationServiceAdmin"></param>
-        /// <returns></returns>
+        /// <param name="OrganizationServiceAdmin">管理员组织服务</param>
+        /// <param name="localeid">语言区域ID，如果提供则按此ID查询</param>
+        /// <param name="code">语言代码，如果localeid为空则按此代码查询</param>
+        /// <returns>语言信息对象，如果未找到则返回null</returns>
         public static LanguageInfo GetLanguageInfo(this IOrganizationService OrganizationServiceAdmin, int? localeid, string code)
         {
             if (!localeid.HasValue && string.IsNullOrWhiteSpace(code)) return null;

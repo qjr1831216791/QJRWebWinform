@@ -5,6 +5,9 @@ using System.Web.Http.Description;
 
 namespace WebApplication.Areas.HelpPage
 {
+    /// <summary>
+    /// API描述扩展类，提供用于处理API描述的扩展方法
+    /// </summary>
     public static class ApiDescriptionExtensions
     {
         /// <summary>

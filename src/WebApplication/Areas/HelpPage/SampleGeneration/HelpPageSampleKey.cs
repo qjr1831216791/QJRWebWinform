@@ -123,6 +123,9 @@ namespace WebApplication.Areas.HelpPage
         /// </summary>
         public HashSet<string> ParameterNames { get; private set; }
 
+        /// <summary>
+        /// 获取参数类型
+        /// </summary>
         public Type ParameterType { get; private set; }
 
         /// <summary>
@@ -130,6 +133,11 @@ namespace WebApplication.Areas.HelpPage
         /// </summary>
         public SampleDirection? SampleDirection { get; private set; }
 
+        /// <summary>
+        /// 确定指定的对象是否等于当前对象
+        /// </summary>
+        /// <param name="obj">要与当前对象进行比较的对象</param>
+        /// <returns>如果指定的对象等于当前对象，则为true；否则为false</returns>
         public override bool Equals(object obj)
         {
             HelpPageSampleKey otherKey = obj as HelpPageSampleKey;
@@ -146,6 +154,10 @@ namespace WebApplication.Areas.HelpPage
                 ParameterNames.SetEquals(otherKey.ParameterNames);
         }
 
+        /// <summary>
+        /// 作为默认哈希函数
+        /// </summary>
+        /// <returns>当前对象的哈希代码</returns>
         public override int GetHashCode()
         {
             int hashCode = ControllerName.ToUpperInvariant().GetHashCode() ^ ActionName.ToUpperInvariant().GetHashCode();

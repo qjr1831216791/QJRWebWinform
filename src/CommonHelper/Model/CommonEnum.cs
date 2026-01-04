@@ -32,9 +32,18 @@ namespace CommonHelper.Model
         Deactive = 2,
     }
 
+    /// <summary>
+    /// 缓存模块枚举，用于标识不同的缓存模块
+    /// </summary>
     public enum Cache_Model
     {
+        /// <summary>
+        /// 实体元数据缓存模块
+        /// </summary>
         CACHE_KEY_MODULENAME_EntityMetadata,
+        /// <summary>
+        /// 自动分配线索缓存模块
+        /// </summary>
         CACHE_KEY_MODULENAME_AutoAssignedLead,
     }
 

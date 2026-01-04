@@ -13,55 +13,77 @@ namespace APIService
     public class BaseCommand : IDisposable
     {
         /// <summary>
-        /// 管理员组织服务
+        /// 管理员组织服务，具有管理员权限的CRM组织服务实例
         /// </summary>
         public IOrganizationService OrganizationServiceAdmin { get { return _OrganizationServiceAdmin; } }
 
+        /// <summary>
+        /// 静态管理员组织服务实例
+        /// </summary>
         public static IOrganizationService _OrganizationServiceAdmin = null;
 
         /// <summary>
-        /// 组织服务
+        /// 组织服务，普通权限的CRM组织服务实例
         /// </summary>
         public IOrganizationService OrganizationService { get { return _OrganizationService; } }
 
+        /// <summary>
+        /// 静态组织服务实例
+        /// </summary>
         private static IOrganizationService _OrganizationService = null;
 
         /// <summary>
-        /// Web配置
+        /// Web配置模型实例，包含环境配置等信息
         /// </summary>
         public WebConfigModel webConfig { get { return _webConfig; } }
 
+        /// <summary>
+        /// 静态Web配置模型实例
+        /// </summary>
         private static WebConfigModel _webConfig = WebConfigModel.Instance;
 
         /// <summary>
-        /// 日志实例
+        /// 日志服务实例，用于记录日志
         /// </summary>
         public SerilogService Log { get { return _log; } }
 
+        /// <summary>
+        /// 静态日志服务实例
+        /// </summary>
         private static SerilogService _log = SerilogService.GetInstance();
 
         /// <summary>
-        /// 当前环境
+        /// 当前CRM环境标识
         /// </summary>
         public string crmEnv { get { return _crmEnv; } }
 
+        /// <summary>
+        /// 静态当前环境标识
+        /// </summary>
         private static string _crmEnv = null;
 
         /// <summary>
-        /// 上一次初始化组织服务的时间
+        /// 上一次初始化组织服务的时间，用于判断是否需要重新初始化
         /// </summary>
         private static DateTime prvInitDate = DateTime.MinValue;
 
         /// <summary>
-        /// 时区
+        /// 时区信息，用于时间转换
         /// </summary>
         public TimeZoneInfo TimeZoneInfo { get { return this._TimeZoneInfo; } }
 
+        /// <summary>
+        /// 时区信息实例，默认为本地时区
+        /// </summary>
         private TimeZoneInfo _TimeZoneInfo = TimeZoneInfo.Local;
 
         /// <summary>
-        /// 初始化组织服务
+        /// 初始化组织服务，根据指定的CRM环境创建或重用组织服务实例
         /// </summary>
+        /// <param name="crmEnv">CRM环境标识，如果为空则使用默认配置</param>
+        /// <remarks>
+        /// 如果距离上次初始化超过45分钟，或环境标识发生变化，将重新初始化组织服务
+        /// </remarks>
         public void Initialize(string crmEnv)
         {
             try
@@ -111,12 +133,14 @@ namespace APIService
         }
 
         /// <summary>
-        /// 获取组织服务
+        /// 创建两个环境的CRM组织服务，用于环境间的数据同步
         /// </summary>
-        /// <param name="envirFrom"></param>
-        /// <param name="envirTo"></param>
-        /// <param name="envirFromService"></param>
-        /// <param name="envirToService"></param>
+        /// <param name="envirFrom">源环境标识</param>
+        /// <param name="envirTo">目标环境标识</param>
+        /// <param name="envirFromService">输出的源环境组织服务</param>
+        /// <param name="envirToService">输出的目标环境组织服务</param>
+        /// <exception cref="InvalidPluginExecutionException">当环境配置无效或组织服务创建失败时抛出</exception>
+        /// <exception cref="CryptographicException">当连接字符串解密失败时抛出</exception>
         protected void CreateCrmServic(string envirFrom, string envirTo, out IOrganizationService envirFromService, out IOrganizationService envirToService)
         {
             try
@@ -171,12 +195,12 @@ namespace APIService
         }
 
         /// <summary>
-        /// 获取组织服务
+        /// 创建指定环境的CRM组织服务
         /// </summary>
-        /// <param name="envirFrom"></param>
-        /// <param name="envirTo"></param>
-        /// <param name="envirFromService"></param>
-        /// <param name="envirToService"></param>
+        /// <param name="envirFrom">环境标识</param>
+        /// <param name="envirFromService">输出的组织服务</param>
+        /// <exception cref="InvalidPluginExecutionException">当环境配置无效或组织服务创建失败时抛出</exception>
+        /// <exception cref="CryptographicException">当连接字符串解密失败时抛出</exception>
         protected void CreateCrmServic(string envirFrom, out IOrganizationService envirFromService)
         {
             try
@@ -215,6 +239,9 @@ namespace APIService
             }
         }
 
+        /// <summary>
+        /// 释放资源，实现IDisposable接口
+        /// </summary>
         public void Dispose()
         {
 

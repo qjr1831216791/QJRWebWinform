@@ -317,6 +317,10 @@ namespace CrmConnection
             }
         }
 
+        /// <summary>
+        /// 获取Web API的前缀URL
+        /// </summary>
+        /// <returns>格式化的Web API URL前缀，例如：https://org.crm.dynamics.com/api/data/v9.0</returns>
         public string GetApiPrefix()
         {
             var prefix = this.ServiceUri.ToString();
@@ -327,11 +331,21 @@ namespace CrmConnection
             return prefix + "api/data/v9.0";
         }
 
+        /// <summary>
+        /// 获取网络凭据对象，用于Active Directory认证
+        /// </summary>
+        /// <returns>包含用户名、密码和域名的NetworkCredential对象</returns>
         public System.Net.NetworkCredential GetNetworkCredential()
         {
             return new System.Net.NetworkCredential(this.UserId, this.Password, this.DomainName);
         }
 
+        /// <summary>
+        /// 验证URI字符串是否有效（必须是HTTP或HTTPS协议的绝对URI）
+        /// </summary>
+        /// <param name="uriSource">要验证的URI字符串</param>
+        /// <param name="validUriResult">验证成功后的Uri对象</param>
+        /// <returns>如果URI有效则返回true，否则返回false</returns>
         private bool GetValidUri(string uriSource, out Uri validUriResult)
         {
             return Uri.TryCreate(uriSource, UriKind.Absolute, out validUriResult) && (validUriResult.Scheme == Uri.UriSchemeHttp || validUriResult.Scheme == Uri.UriSchemeHttps);
@@ -353,15 +367,20 @@ namespace CrmConnection
         }
 
         /// <summary>
-        /// Parse the connection sting 
+        /// 解析连接字符串并创建CrmConnectionInfo对象
         /// </summary>
-        /// <param name="connectionString"></param>
-        /// <returns></returns>
+        /// <param name="connectionString">CRM连接字符串</param>
+        /// <returns>解析后的CrmConnectionInfo对象</returns>
         public static CrmConnectionInfo Parse(string connectionString)
         {
             return new CrmConnectionInfo(connectionString, ToDictionary(connectionString));
         }
 
+        /// <summary>
+        /// 将连接字符串转换为字典格式
+        /// </summary>
+        /// <param name="connectionString">连接字符串</param>
+        /// <returns>包含连接字符串键值对的字典，如果解析失败则返回空字典</returns>
         private static IDictionary<string, string> ToDictionary(string connectionString)
         {
             try
@@ -548,37 +567,37 @@ namespace CrmConnection
     }
 
     /// <summary>
-    /// Extension
+    /// 扩展方法类，提供字符串和枚举的扩展功能
     /// </summary>
     internal static class Extension
     {
         /// <summary>
-        /// Enum extension
+        /// 将字符串转换为指定类型的枚举值
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="enumName"></param>
-        /// <returns></returns>
+        /// <typeparam name="T">枚举类型</typeparam>
+        /// <param name="enumName">枚举名称字符串</param>
+        /// <returns>转换后的枚举值</returns>
         public static T ToEnum<T>(this string enumName)
         {
             return (T)((object)Enum.Parse(typeof(T), enumName));
         }
 
         /// <summary>
-        ///
+        /// 将整数值转换为指定类型的枚举值
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="enumValue"></param>
-        /// <returns></returns>
+        /// <typeparam name="T">枚举类型</typeparam>
+        /// <param name="enumValue">枚举的整数值</param>
+        /// <returns>转换后的枚举值</returns>
         public static T ToEnum<T>(this int enumValue)
         {
             return enumValue.ToString().ToEnum<T>();
         }
 
         /// <summary>
-        /// ConnectionStringExtensions
+        /// 将连接字符串转换为字典格式
         /// </summary>
-        /// <param name="connectionString"></param>
-        /// <returns></returns>
+        /// <param name="connectionString">连接字符串</param>
+        /// <returns>包含连接字符串键值对的字典，如果解析失败则返回空字典</returns>
         public static IDictionary<string, string> ToDictionary(this string connectionString)
         {
             try
@@ -604,11 +623,11 @@ namespace CrmConnection
         }
 
         /// <summary>
-        /// StringExtensions
+        /// 使用指定的参数格式化字符串
         /// </summary>
-        /// <param name="format"></param>
-        /// <param name="args"></param>
-        /// <returns></returns>
+        /// <param name="format">格式化字符串</param>
+        /// <param name="args">格式化参数</param>
+        /// <returns>格式化后的字符串</returns>
         public static string FormatWith(this string format, params object[] args)
         {
             return format.FormatWith(new object[]
@@ -619,12 +638,12 @@ namespace CrmConnection
         }
 
         /// <summary>
-        /// ConnectionStringExtensions
+        /// 从字典中获取第一个非空且非空字符串的值
         /// </summary>
-        /// <typeparam name="TKey"></typeparam>
-        /// <param name="dictionary"></param>
-        /// <param name="keys"></param>
-        /// <returns></returns>
+        /// <typeparam name="TKey">字典键的类型</typeparam>
+        /// <param name="dictionary">字典对象</param>
+        /// <param name="keys">要查找的键数组，按顺序查找</param>
+        /// <returns>找到的第一个非空值，如果所有键都不存在或值为空则返回null</returns>
         public static string FirstNotNullOrEmpty<TKey>(this IDictionary<TKey, string> dictionary, params TKey[] keys)
         {
             return (from key in keys
@@ -633,35 +652,38 @@ namespace CrmConnection
         }
     }
 
+    /// <summary>
+    /// CRM认证类型枚举
+    /// </summary>
     public enum CrmAuthenticationTypes
     {
-        //
-        // 摘要:
-        //     Active Directory Auth
+        /// <summary>
+        /// Active Directory认证
+        /// </summary>
         AD = 0,
-        //
-        // 摘要:
-        //     Live Auth
+        /// <summary>
+        /// Live认证
+        /// </summary>
         Live = 1,
-        //
-        // 摘要:
-        //     SPLA Auth
+        /// <summary>
+        /// SPLA认证（IFD）
+        /// </summary>
         IFD = 2,
-        //
-        // 摘要:
-        //     CLAIMS based Auth
+        /// <summary>
+        /// 基于声明的认证
+        /// </summary>
         Claims = 3,
-        //
-        // 摘要:
-        //     Office365 base login process
+        /// <summary>
+        /// Office365登录流程
+        /// </summary>
         Office365 = 4,
-        //
-        // 摘要:
-        //     OAuth based Auth
+        /// <summary>
+        /// OAuth认证
+        /// </summary>
         OAuth = 5,
-        //
-        // 摘要:
-        //     Invalid connection
+        /// <summary>
+        /// 无效连接
+        /// </summary>
         InvalidConnection = -1
     }
 }

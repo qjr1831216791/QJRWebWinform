@@ -35,18 +35,33 @@ namespace WebApplication.Areas.HelpPage
             _documentNavigator = xpath.CreateNavigator();
         }
 
+        /// <summary>
+        /// 获取控制器的文档说明
+        /// </summary>
+        /// <param name="controllerDescriptor">控制器描述符</param>
+        /// <returns>控制器的XML文档说明，如果未找到则返回null</returns>
         public string GetDocumentation(HttpControllerDescriptor controllerDescriptor)
         {
             XPathNavigator typeNode = GetTypeNode(controllerDescriptor.ControllerType);
             return GetTagValue(typeNode, "summary");
         }
 
+        /// <summary>
+        /// 获取操作的文档说明
+        /// </summary>
+        /// <param name="actionDescriptor">操作描述符</param>
+        /// <returns>操作的XML文档说明，如果未找到则返回null</returns>
         public virtual string GetDocumentation(HttpActionDescriptor actionDescriptor)
         {
             XPathNavigator methodNode = GetMethodNode(actionDescriptor);
             return GetTagValue(methodNode, "summary");
         }
 
+        /// <summary>
+        /// 获取参数的文档说明
+        /// </summary>
+        /// <param name="parameterDescriptor">参数描述符</param>
+        /// <returns>参数的XML文档说明，如果未找到则返回null</returns>
         public virtual string GetDocumentation(HttpParameterDescriptor parameterDescriptor)
         {
             ReflectedHttpParameterDescriptor reflectedParameterDescriptor = parameterDescriptor as ReflectedHttpParameterDescriptor;
@@ -67,12 +82,22 @@ namespace WebApplication.Areas.HelpPage
             return null;
         }
 
+        /// <summary>
+        /// 获取操作的响应文档说明
+        /// </summary>
+        /// <param name="actionDescriptor">操作描述符</param>
+        /// <returns>响应的XML文档说明，如果未找到则返回null</returns>
         public string GetResponseDocumentation(HttpActionDescriptor actionDescriptor)
         {
             XPathNavigator methodNode = GetMethodNode(actionDescriptor);
             return GetTagValue(methodNode, "returns");
         }
 
+        /// <summary>
+        /// 获取成员（属性或字段）的文档说明
+        /// </summary>
+        /// <param name="member">成员信息</param>
+        /// <returns>成员的XML文档说明，如果未找到则返回null</returns>
         public string GetDocumentation(MemberInfo member)
         {
             string memberName = String.Format(CultureInfo.InvariantCulture, "{0}.{1}", GetTypeName(member.DeclaringType), member.Name);
@@ -82,12 +107,22 @@ namespace WebApplication.Areas.HelpPage
             return GetTagValue(propertyNode, "summary");
         }
 
+        /// <summary>
+        /// 获取类型的文档说明
+        /// </summary>
+        /// <param name="type">类型</param>
+        /// <returns>类型的XML文档说明，如果未找到则返回null</returns>
         public string GetDocumentation(Type type)
         {
             XPathNavigator typeNode = GetTypeNode(type);
             return GetTagValue(typeNode, "summary");
         }
 
+        /// <summary>
+        /// 从XML文档中获取方法的节点
+        /// </summary>
+        /// <param name="actionDescriptor">操作描述符</param>
+        /// <returns>方法的XPath导航器节点，如果未找到则返回null</returns>
         private XPathNavigator GetMethodNode(HttpActionDescriptor actionDescriptor)
         {
             ReflectedHttpActionDescriptor reflectedActionDescriptor = actionDescriptor as ReflectedHttpActionDescriptor;
@@ -100,6 +135,11 @@ namespace WebApplication.Areas.HelpPage
             return null;
         }
 
+        /// <summary>
+        /// 获取方法的完整名称，包括类型名、方法名和参数类型
+        /// </summary>
+        /// <param name="method">方法信息</param>
+        /// <returns>格式化的方法名称，例如：TypeName.MethodName(ParamType1,ParamType2)</returns>
         private static string GetMemberName(MethodInfo method)
         {
             string name = String.Format(CultureInfo.InvariantCulture, "{0}.{1}", GetTypeName(method.DeclaringType), method.Name);
@@ -113,6 +153,12 @@ namespace WebApplication.Areas.HelpPage
             return name;
         }
 
+        /// <summary>
+        /// 从父节点中获取指定标签的值
+        /// </summary>
+        /// <param name="parentNode">父XPath导航器节点</param>
+        /// <param name="tagName">标签名称，例如：summary、returns、param</param>
+        /// <returns>标签的值，如果未找到则返回null</returns>
         private static string GetTagValue(XPathNavigator parentNode, string tagName)
         {
             if (parentNode != null)
@@ -127,6 +173,11 @@ namespace WebApplication.Areas.HelpPage
             return null;
         }
 
+        /// <summary>
+        /// 从XML文档中获取类型的节点
+        /// </summary>
+        /// <param name="type">类型</param>
+        /// <returns>类型的XPath导航器节点，如果未找到则返回null</returns>
         private XPathNavigator GetTypeNode(Type type)
         {
             string controllerTypeName = GetTypeName(type);
@@ -134,6 +185,11 @@ namespace WebApplication.Areas.HelpPage
             return _documentNavigator.SelectSingleNode(selectExpression);
         }
 
+        /// <summary>
+        /// 获取类型的完整名称，处理泛型和嵌套类型
+        /// </summary>
+        /// <param name="type">类型</param>
+        /// <returns>格式化的类型名称，例如：Namespace.TypeName{System.Int32,System.String}</returns>
         private static string GetTypeName(Type type)
         {
             string name = type.FullName;

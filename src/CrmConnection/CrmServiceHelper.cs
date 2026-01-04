@@ -8,16 +8,30 @@ using System.Text;
 
 namespace CrmConnection
 {
+    /// <summary>
+    /// CRM服务帮助类，用于创建和管理Dynamics CRM的组织服务连接
+    /// </summary>
     public class CrmServiceHelper
     {
+        /// <summary>
+        /// 连接字符串
+        /// </summary>
         private readonly string ConnectionString;
+        
+        /// <summary>
+        /// 组织服务实例，用于执行CRM操作
+        /// </summary>
         public IOrganizationService OrganizationService;
+        
+        /// <summary>
+        /// CRM连接信息配置对象
+        /// </summary>
         private CrmConnectionInfo _config;
 
         /// <summary>
-        /// 构造函数
+        /// 构造函数，根据连接字符串创建CRM服务
         /// </summary>
-        /// <param name="connectionString"></param>
+        /// <param name="connectionString">CRM连接字符串</param>
         public CrmServiceHelper(string connectionString)
         {
             this.ConnectionString = connectionString;
@@ -28,9 +42,10 @@ namespace CrmConnection
         }
 
         /// <summary>
-        /// 构造函数
+        /// 构造函数，根据连接字符串和用户ID创建CRM服务
         /// </summary>
-        /// <param name="connectionString"></param>
+        /// <param name="connectionString">CRM连接字符串</param>
+        /// <param name="userId">用户ID，用于设置组织服务的调用者身份</param>
         public CrmServiceHelper(string connectionString, Guid userId)
         {
             this.ConnectionString = connectionString;
@@ -44,9 +59,9 @@ namespace CrmConnection
         }
 
         /// <summary>
-        /// 生成组织服务
+        /// 根据配置信息创建CRM服务客户端
         /// </summary>
-        /// <returns></returns>
+        /// <returns>CrmServiceClient实例，如果认证类型不支持则返回null</returns>
         private CrmServiceClient CreateCrmServiceClient()
         {
             //var tokenCacheStorePath = GetTokenCacheStorePath();
@@ -101,6 +116,10 @@ namespace CrmConnection
             return null;
         }
 
+        /// <summary>
+        /// 获取令牌缓存存储路径
+        /// </summary>
+        /// <returns>令牌缓存文件的完整路径</returns>
         private string GetTokenCacheStorePath()
         {
             var baseDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TokenCacheDir");

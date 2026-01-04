@@ -34,12 +34,12 @@ namespace LogService.Service
         private bool _isClosed = false;
 
         /// <summary>
-        /// 日志配置静态类
+        /// 日志配置实例，用于获取日志配置信息
         /// </summary>
         private LogConfig logConfig { get; set; } = LogConfig.GetInstance();
 
         /// <summary>
-        /// 写入日志配置类
+        /// 写入日志配置类，包含日志路径、滚动间隔、保留天数等配置
         /// </summary>
         public WriteLogConfig writeLogConfig { get; set; }
 
@@ -82,9 +82,10 @@ namespace LogService.Service
         }
 
         /// <summary>
-        /// 记录详细日志
+        /// 记录信息级别日志
         /// </summary>
-        /// <param name="msg"></param>
+        /// <param name="msg">要记录的日志消息</param>
+        /// <exception cref="Exception">当日志服务已关闭时抛出异常</exception>
         public void InfoMsg(string msg)
         {
             if (!_isClosed)
@@ -98,9 +99,10 @@ namespace LogService.Service
         }
 
         /// <summary>
-        /// 记录Debug日志
+        /// 记录调试级别日志
         /// </summary>
-        /// <param name="msg"></param>
+        /// <param name="msg">要记录的日志消息</param>
+        /// <exception cref="Exception">当日志服务已关闭时抛出异常</exception>
         public void DebugMsg(string msg)
         {
             if (!_isClosed)
@@ -114,9 +116,10 @@ namespace LogService.Service
         }
 
         /// <summary>
-        /// 记录Warning日志
+        /// 记录警告级别日志
         /// </summary>
-        /// <param name="msg"></param>
+        /// <param name="msg">要记录的日志消息</param>
+        /// <exception cref="Exception">当日志服务已关闭时抛出异常</exception>
         public void WarningMsg(string msg)
         {
             if (!_isClosed)
@@ -130,9 +133,10 @@ namespace LogService.Service
         }
 
         /// <summary>
-        /// 记录Error日志
+        /// 记录错误级别日志
         /// </summary>
-        /// <param name="msg"></param>
+        /// <param name="msg">要记录的日志消息</param>
+        /// <exception cref="Exception">当日志服务已关闭时抛出异常</exception>
         public void ErrorMsg(string msg)
         {
             if (!_isClosed)
@@ -146,9 +150,10 @@ namespace LogService.Service
         }
 
         /// <summary>
-        /// 记录Exception日志
+        /// 记录异常日志，包含异常详细信息
         /// </summary>
-        /// <param name="msg"></param>
+        /// <param name="ex">要记录的异常对象</param>
+        /// <exception cref="Exception">当日志服务已关闭时抛出异常</exception>
         public void LogException(Exception ex)
         {
             if (!_isClosed)
@@ -172,27 +177,27 @@ namespace LogService.Service
     }
 
     /// <summary>
-    /// 写入日志配置类
+    /// 写入日志配置类，用于配置日志文件的写入参数
     /// </summary>
     public class WriteLogConfig
     {
         /// <summary>
-        /// 日志路径
+        /// 日志文件存储路径
         /// </summary>
         public string logPath { get; set; }
 
         /// <summary>
-        /// 间隔时间
+        /// 日志文件滚动间隔，用于控制日志文件按时间分割的方式
         /// </summary>
         public RollingInterval rollingInterval { get; set; }
 
         /// <summary>
-        /// 保留日志天数
+        /// 保留日志文件的天数限制，超过此天数的日志文件将被自动删除
         /// </summary>
         public int retainedFileCountLimit { get; set; }
 
         /// <summary>
-        /// 日志模板
+        /// 日志输出模板，用于格式化日志消息的显示格式
         /// </summary>
         public string outputTemplate { get; set; }
     }

@@ -7,12 +7,12 @@ namespace CommonHelper
     public static class ExcelHelper
     {
         /// <summary>
-        /// 读取Excel为DataSet
+        /// 读取Excel文件为DataSet，支持.xls、.xlsx和.csv格式
         /// </summary>
-        /// <param name="relativeFilePath"></param>
-        /// <param name="useHeaderRow"></param>
-        /// <returns></returns>
-        /// <exception cref="FileNotFoundException"></exception>
+        /// <param name="relativeFilePath">Excel文件的相对路径</param>
+        /// <param name="useHeaderRow">是否使用第一行作为列名，默认为true</param>
+        /// <returns>包含所有工作表的DataSet对象，如果文件格式不支持或读取失败则返回null</returns>
+        /// <exception cref="FileNotFoundException">当指定的文件不存在时抛出</exception>
         public static DataSet ExcelToDataSet(string relativeFilePath, bool useHeaderRow = true)
         {
             var filePath = Path.GetFullPath(relativeFilePath);

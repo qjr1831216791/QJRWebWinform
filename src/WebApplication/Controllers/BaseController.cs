@@ -10,10 +10,10 @@ namespace WebApplication.Controllers
     public class BaseController : ApiController
     {
         /// <summary>
-        /// Gets a command object.
+        /// 获取命令对象实例，根据请求头中的crmenv参数初始化相应的CRM环境
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
+        /// <typeparam name="T">命令类型，必须继承自BaseCommand并具有无参构造函数</typeparam>
+        /// <returns>初始化后的命令对象实例</returns>
         public virtual T Command<T>() where T : BaseCommand, new()
         {
             var crmEnv = string.Empty;

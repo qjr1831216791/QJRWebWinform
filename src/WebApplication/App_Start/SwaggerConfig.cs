@@ -9,12 +9,12 @@ using System;
 namespace WebApplication
 {
     /// <summary>
-    /// 
+    /// Swagger配置类，用于配置API文档生成和Swagger UI
     /// </summary>
     public class SwaggerConfig
     {
         /// <summary>
-        /// 
+        /// 注册Swagger配置，启用Swagger文档和UI
         /// </summary>
         public static void Register()
         {
@@ -260,10 +260,10 @@ namespace WebApplication
         }
 
         /// <summary>
-        /// 
+        /// 获取XML注释文件的路径
         /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
+        /// <param name="name">程序集名称</param>
+        /// <returns>XML注释文件的完整路径</returns>
         protected static string GetXmlCommentsPath(string name)
         {
             return string.Format(@"{0}\bin\{1}.XML", AppDomain.CurrentDomain.BaseDirectory, name);

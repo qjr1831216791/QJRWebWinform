@@ -86,6 +86,11 @@ namespace WebApplication.Areas.HelpPage.ModelDescriptions
 
         private Lazy<IModelDocumentationProvider> _documentationProvider;
 
+        /// <summary>
+        /// 初始化模型描述生成器实例
+        /// </summary>
+        /// <param name="config">HTTP配置对象</param>
+        /// <exception cref="ArgumentNullException">当config为null时抛出</exception>
         public ModelDescriptionGenerator(HttpConfiguration config)
         {
             if (config == null)
@@ -97,6 +102,9 @@ namespace WebApplication.Areas.HelpPage.ModelDescriptions
             GeneratedModels = new Dictionary<string, ModelDescription>(StringComparer.OrdinalIgnoreCase);
         }
 
+        /// <summary>
+        /// 获取已生成的模型描述字典，键为模型名称，值为模型描述对象
+        /// </summary>
         public Dictionary<string, ModelDescription> GeneratedModels { get; private set; }
 
         private IModelDocumentationProvider DocumentationProvider
@@ -107,6 +115,13 @@ namespace WebApplication.Areas.HelpPage.ModelDescriptions
             }
         }
 
+        /// <summary>
+        /// 获取或创建指定类型的模型描述，如果已存在则返回缓存的描述，否则创建新的描述
+        /// </summary>
+        /// <param name="modelType">要描述的类型</param>
+        /// <returns>模型描述对象</returns>
+        /// <exception cref="ArgumentNullException">当modelType为null时抛出</exception>
+        /// <exception cref="InvalidOperationException">当发现重复的模型名称时抛出</exception>
         public ModelDescription GetOrCreateModelDescription(Type modelType)
         {
             if (modelType == null)

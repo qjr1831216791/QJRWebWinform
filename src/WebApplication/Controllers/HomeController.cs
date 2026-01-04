@@ -3,14 +3,14 @@
 namespace WebApplication.Controllers
 {
     /// <summary>
-    /// HomeController
+    /// 首页控制器，用于处理根路径请求并转发到Vue应用
     /// </summary>
     public class HomeController : Controller
     {
         /// <summary>
-        /// Index
+        /// 首页操作，将请求转发到Vue应用的index.html
         /// </summary>
-        /// <returns></returns>
+        /// <returns>空结果，因为使用了Server.Transfer进行内部转发</returns>
         public ActionResult Index()
         {
             Server.Transfer(Url.Content("~/dist/index.html"));

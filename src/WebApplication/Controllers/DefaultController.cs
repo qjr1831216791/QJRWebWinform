@@ -34,6 +34,9 @@ namespace WebApplication.Controllers
         /// <summary>
         /// 测试日志功能是否正常
         /// </summary>
+        /// <param name="level">日志级别</param>
+        /// <param name="message">日志消息，默认为"Hello World"</param>
+        /// <returns>测试结果</returns>
         [HttpGet]
         public virtual ResultModel TestLogTrace(string level, string message = "Hello World")
         {
@@ -43,8 +46,8 @@ namespace WebApplication.Controllers
         /// <summary>
         /// 测试API Post入参-单个基础属性
         /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
+        /// <param name="input">输入的字符串参数</param>
+        /// <returns>包含输入参数的结果模型</returns>
         [HttpPost]
         public virtual ResultModel TestAPIPost(string input)
         {
@@ -56,9 +59,9 @@ namespace WebApplication.Controllers
         /// <summary>
         /// 测试API Post入参2-多个基础属性
         /// </summary>
-        /// <param name="input"></param>
-        /// <param name="input2"></param>
-        /// <returns></returns>
+        /// <param name="input">第一个输入的字符串参数</param>
+        /// <param name="input2">第二个输入的字符串参数</param>
+        /// <returns>包含所有输入参数的结果模型</returns>
         [HttpPost]
         public virtual ResultModel TestAPIPost2(string input, string input2)
         {
@@ -70,8 +73,8 @@ namespace WebApplication.Controllers
         /// <summary>
         /// 测试API Post入参3-复杂参数
         /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
+        /// <param name="input">复杂对象参数，包含input和list属性</param>
+        /// <returns>包含序列化后输入参数的结果模型</returns>
         [HttpPost]
         public virtual ResultModel TestAPIPost3([FromBody] TestAPIPost3Model input)
         {
@@ -83,7 +86,7 @@ namespace WebApplication.Controllers
         /// <summary>
         /// 获取网站配置的CRM环境信息
         /// </summary>
-        /// <returns></returns>
+        /// <returns>包含所有配置的CRM环境信息的结果模型</returns>
         [HttpGet]
         public virtual ResultModel GetCRMEnvironments()
         {

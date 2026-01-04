@@ -25,6 +25,17 @@ namespace WebApplication.Areas.HelpPage
     /// </summary>
     public static class HelpPageConfig
     {
+        /// <summary>
+        /// 注册帮助页面配置，设置示例对象和媒体类型示例
+        /// </summary>
+        /// <param name="config">HTTP配置对象</param>
+        /// <remarks>
+        /// 此方法用于自定义帮助页面的行为，例如：
+        /// - 设置XML文档提供程序
+        /// - 设置示例对象
+        /// - 设置特定媒体类型的示例
+        /// - 设置请求/响应示例
+        /// </remarks>
         [SuppressMessage("Microsoft.Globalization", "CA1303:Do not pass literals as localized parameters",
             MessageId = "WebApplication.Areas.HelpPage.TextSample.#ctor(System.String)",
             Justification = "End users may choose to merge this string with existing localized resources.")]
@@ -81,6 +92,12 @@ namespace WebApplication.Areas.HelpPage
         }
 
 #if Handle_PageResultOfT
+        /// <summary>
+        /// 为PageResult&lt;T&gt;类型生成示例对象
+        /// </summary>
+        /// <param name="sampleGenerator">示例生成器</param>
+        /// <param name="type">要生成示例的类型</param>
+        /// <returns>生成的PageResult示例对象，如果类型不是PageResult&lt;T&gt;则返回null</returns>
         private static object GeneratePageResult(HelpPageSampleGenerator sampleGenerator, Type type)
         {
             if (type.IsGenericType)
