@@ -44,7 +44,7 @@
                     </el-row>
                     <!-- 过滤行 -->
                     <el-row :gutter="24" style="min-height: 28px">
-                        <el-col :span="9" v-show="createdonRangeShow">
+                        <el-col :span="10" v-show="createdonRangeShow">
                             <!-- 创建、修改时间 -->
                             <el-form-item prop="createdonDR" label="创建、修改时间：" required>
                                 <el-date-picker size="small" v-model="input.createdonDR" type="datetimerange"
