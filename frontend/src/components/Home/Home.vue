@@ -93,7 +93,6 @@ export default {
     methods: {
         //配置文件初始化
         BaseDataInit: function () {
-            console.log("BaseData", BaseData);
             if (!this.rtcrm.isNull(BaseData)) {
                 if (!this.rtcrm.isNull(BaseData.componentsMapPath)) {
                     this.$set(this, "componentsMapPath", BaseData.componentsMapPath);
@@ -116,7 +115,6 @@ export default {
             this.$router.push({ path: route }, () => {
                 this.getCurrentComponent();
             });
-            console.log("menu", menu);
         },
 
         //获取CRM环境列表
@@ -188,13 +186,12 @@ export default {
                 type: type,
             });
             if (type === "error") {
-                console.log(message);
+                console.error(message);
             }
         },
 
         //componentMap初始化
         componentMapInit: async function () {
-            console.log(this.$options.components);
             let obj = {};
             for (let name in this.componentsMapPath) {
                 let path = this.componentsMapPath[name];
@@ -206,7 +203,6 @@ export default {
                 });
             }
             this.$set(this, "componentMap", obj);
-            console.log("componentMap", this.componentMap);
         },
 
         //获取跳转组件
@@ -218,7 +214,6 @@ export default {
             if (componentResult) {
                 // 获取当前路由
                 const currentPath = componentResult[1];
-                console.log("currentPath", currentPath);
                 // 返回与当前路由匹配的组件名称，如果没有匹配，返回null
                 if (this.componentMap[currentPath]) {
                     this.$set(this, "currentComponent", this.componentMap[currentPath]);
@@ -230,7 +225,6 @@ export default {
             else {
                 this.$set(this, "currentComponent", this.componentMap[this.componentsMapPath[this.defaultPage]]);
             }
-            console.log("currentComponent", this.currentComponent);
         },
     },
 }

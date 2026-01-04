@@ -288,7 +288,6 @@ export default {
   methods: {
     //配置文件初始化
     BaseDataInit: function () {
-      console.log("BaseData", BaseData);
       if (!this.rtcrm.isNull(BaseData)) {
         if (!this.rtcrm.isNull(BaseData.tabs) && BaseData.tabs.length > 0) {
           this.$set(this, "tabs", BaseData.tabs);
@@ -350,7 +349,6 @@ export default {
 
     //查询
     getData: function (envir) {
-      console.log(this.input);
       let input = {};
       let route = "";
       let _this = this;

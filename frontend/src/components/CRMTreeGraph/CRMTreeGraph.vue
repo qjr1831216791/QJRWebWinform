@@ -197,7 +197,6 @@ export default {
             if (newVal === true && this.$refs.dataContainer) {
                 this.$nextTick(() => {
                     let loadingInstance = Loading.service({ target: this.$refs.dataContainer["$el"], lock: true });
-                    console.log("loadingInstance", loadingInstance);
                     this.$set(this, "loadingInstance", loadingInstance)
                 });
             }
@@ -218,7 +217,6 @@ export default {
             else {
                 this.$set(this, "BaseData", null);
             }
-            console.log("BaseData", this.BaseData);
 
             if (this.rtcrm.isNull(this.BaseData))
                 this.$set(this, "myBaseData", []);
@@ -226,7 +224,6 @@ export default {
                 this.$set(this, "myBaseData", []);
             else
                 this.$set(this, "myBaseData", this.BaseData[this.$globalVar["selectEnv"]]);;
-            console.log("myBaseData", this.myBaseData);
 
             //计算当前详情表单的行列数
             this.getDetailTableSize();
@@ -397,7 +394,6 @@ export default {
 
         //处理为树形结构数据
         handleTreeData: function (data, config = {}, rootParentId = null) {
-            console.log("待处理为树形结构数据", data);
             this.$set(this.tableData, "treeData", []);
             if (this.rtcrm.isNull(data) || data.length === 0) return;
             let isLookupParentField = typeof (data[0][this.currentEntData.parentField]) === "object" &&
@@ -465,9 +461,6 @@ export default {
 
             this.$set(this.tableData, "treeData", rootNode[childrenKey]);
             this.$set(this.tableData, "treeDepth", maxDepth);
-
-            console.log("已处理为树形结构数据", this.tableData.treeData);
-            console.log("treeDepth", this.tableData.treeDepth);
         },
 
         //获取指定行列的Item
@@ -491,7 +484,6 @@ export default {
 
             let _columnCountArray = Array.from({ length: this.detailTableConfig.columnCount }, (_, i) => i);
             this.$set(this.detailTableConfig, "columnCountArray", _columnCountArray);
-            console.log("详情表单配置", this.detailTableConfig);
 
             let selectTreeNodeForm = [];
             for (let rowInd of _rowCountArray) {
@@ -509,7 +501,6 @@ export default {
                 selectTreeNodeForm.push(row);
             }
             this.$set(this.tableData, "selectTreeNodeForm", selectTreeNodeForm);
-            console.log("selectTreeNodeForm", this.tableData.selectTreeNodeForm);
         },
     },
 };

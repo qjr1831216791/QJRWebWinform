@@ -493,7 +493,7 @@ export default {
                 type: type,
             });
             if (type === "error") {
-                console.log(message);
+                console.error(message);
             }
         },
 

@@ -206,7 +206,6 @@ export default {
             else {
                 this.$set(this, "UserThirtyFields", null);
             }
-            console.log("UserThirtyFields", this.UserThirtyFields);
 
             if (this.rtcrm.isNull(this.UserThirtyFields))
                 this.$set(this, "myUserThirtyFields", []);
@@ -214,7 +213,6 @@ export default {
                 this.$set(this, "myUserThirtyFields", []);
             else
                 this.$set(this, "myUserThirtyFields", this.UserThirtyFields[this.$globalVar["selectEnv"]]);;
-            console.log("myUserThirtyFields", this.myUserThirtyFields);
 
             this.$set(this, "tableKey", this.tableKey + 1); //刷新Table
         },

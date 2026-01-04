@@ -227,7 +227,6 @@ export default {
                             this.jshelper.openAlertDialog(this, res.message, "查询天气数据失败");
                         }
                         _this.$set(_this, "publicKey", _this.publicKey + 1); //刷新
-                        // console.log(res);
                     })
                     .catch((err) => {
                         _this.jshelper.openAlertDialog(_this, err.message, "查询天气数据失败");
@@ -271,7 +270,6 @@ export default {
                             this.jshelper.openAlertDialog(this, res.message, "查询天气数据失败");
                         }
                         _this.$set(_this, "publicKey", _this.publicKey + 1); //刷新
-                        // console.log(res);
                     })
                     .catch((err) => {
                         _this.jshelper.openAlertDialog(_this, err.message, "查询天气数据失败");

@@ -55,7 +55,6 @@ export default {
     methods: {
         //配置文件初始化
         BaseDataInit: function () {
-            console.log("BaseData", BaseData);
             if (!this.rtcrm.isNull(BaseData)) {
                 if (!this.rtcrm.isNull(BaseData.aphorisms) && BaseData.aphorisms.length > 0) {
                     this.$set(this, "aphorisms", BaseData.aphorisms);
