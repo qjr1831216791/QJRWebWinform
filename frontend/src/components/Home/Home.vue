@@ -136,7 +136,7 @@ export default {
                     this.$set(this, "showMain", true);
                     setTimeout(() => {
                         this.$set(this, "showSelf", false);
-                    }, 3000);
+                    }, 1000);
                 }).catch((err) => {
                     this.jshelper.openAlertDialog(this, err.message, "获取CRM环境列表");
                 }).finally(() => {
@@ -156,7 +156,7 @@ export default {
                     this.$set(this, "showMain", true);
                     setTimeout(() => {
                         this.$set(this, "showSelf", false);
-                    }, 3000);
+                    }, 1000);
                 }).catch((err) => {
                     this.jshelper.openAlertDialog(this, err.message, "获取CRM环境列表");
                 }).finally(() => {

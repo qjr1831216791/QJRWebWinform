@@ -154,7 +154,7 @@ export default {
                 ecFromCopy: [],
                 ecFromTotalRecord: 0,
             }, //数据
-            tableHeight: "520px", //表格高度
+            defaultTableHeight: "520", //表格高度
             tableKey: 1, //刷新表格的Key
             loading: false, //是否加载数据中
             entityOptionsLoading: false, //是否加载实体名称中
@@ -183,6 +183,19 @@ export default {
         this.$on('environment-change', this.environmentChange);
     },
     computed: {
+        // 检测是否为桌面端环境（复用 JsCrmHelper 的方法）
+        isDesktop() {
+            return this.jshelper && this.jshelper.isDesktopEnvironment
+                ? this.jshelper.isDesktopEnvironment()
+                : false;
+        },
+
+        // Table高度
+        tableHeight() {
+            let height = parseInt(this.defaultTableHeight);
+            if (this.isDesktop) return height + 100 + "px";
+            return height + "px";
+        },
     },
     methods: {
         //配置文件初始化

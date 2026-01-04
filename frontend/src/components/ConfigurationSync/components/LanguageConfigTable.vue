@@ -125,7 +125,7 @@ export default {
         // 带有分页的Table的高度
         pagingTableHeight() {
             let tableHeight = parseInt(this.tableHeight);
-            return tableHeight - 30 + "px";
+            return tableHeight - 70 + "px";
         },
     },
     methods: {

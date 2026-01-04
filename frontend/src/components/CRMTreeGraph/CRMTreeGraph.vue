@@ -49,7 +49,7 @@
                                 <!-- 数据展示 -->
                                 <el-container ref="dataContainer" id="dataContainer">
                                     <!-- 树形图 -->
-                                    <el-aside width="450px" style="max-height: 550px;">
+                                    <el-aside width="450px" :style="{ maxHeight: tableHeight }">
                                         <el-tree :style="[treeWidthStyle]" :data="tableData.treeData"
                                             :expand-on-click-node="false" :highlight-current="true"
                                             :props="treeDefaultProps" :disabled="loading" :default-expand-all="true"
@@ -115,7 +115,7 @@ export default {
                 children: 'children',
                 label: 'label'
             },
-            tableHeight: "500px", //表格高度
+            defaultTableHeight: "550", //表格高度
             tableKey: 1, //刷新表格的Key
             loading: false, //是否加载数据中
             loadingInstance: null,//loading实例
@@ -175,6 +175,20 @@ export default {
             return {
                 minWidth: this.tableData.treeDepth * 18 + 100 + "px",
             };
+        },
+
+        // 检测是否为桌面端环境（复用 JsCrmHelper 的方法）
+        isDesktop() {
+            return this.jshelper && this.jshelper.isDesktopEnvironment
+                ? this.jshelper.isDesktopEnvironment()
+                : false;
+        },
+
+        // Table高度
+        tableHeight() {
+            let height = parseInt(this.defaultTableHeight);
+            if (this.isDesktop) return height + 110 + "px";
+            return height + "px";
         },
     },
     watch: {

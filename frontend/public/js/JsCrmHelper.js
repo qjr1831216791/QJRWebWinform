@@ -347,17 +347,9 @@ JsCrm.webApi = {
             window.nativeHost &&
             typeof window.nativeHost.executeCommand === 'function';
 
-        console.log('[API Mode] 配置检测:', {
-            apiMode: apiMode,
-            forceNativeHost: forceNativeHost,
-            nativeHostAvailable: nativeHostAvailable,
-            windowLocation: typeof window !== 'undefined' && window.location ? window.location.href : 'N/A'
-        });
-
         // 如果强制使用 NativeHost，直接返回
         if (forceNativeHost) {
             if (nativeHostAvailable) {
-                console.log('[API Mode] 强制使用 NativeHost 模式');
                 return 'nativehost';
             } else {
                 console.warn('[API Mode] 配置要求使用 NativeHost，但 NativeHost 不可用，将尝试使用 WebAPI');
@@ -367,12 +359,10 @@ JsCrm.webApi = {
 
         // 如果明确指定模式，直接返回
         if (apiMode === 'webapi') {
-            console.log('[API Mode] 明确指定使用 WebAPI 模式');
             return 'webapi';
         }
         if (apiMode === 'nativehost') {
             if (nativeHostAvailable) {
-                console.log('[API Mode] 明确指定使用 NativeHost 模式');
                 return 'nativehost';
             } else {
                 console.warn('[API Mode] 配置要求使用 NativeHost，但 NativeHost 不可用，将降级使用 WebAPI');
@@ -383,16 +373,14 @@ JsCrm.webApi = {
         // 自动检测模式：如果 NativeHost 可用则使用，否则使用 WebAPI
         if (apiMode === 'auto') {
             if (nativeHostAvailable) {
-                console.log('[API Mode] 自动检测：NativeHost 可用，使用 NativeHost 模式');
                 return 'nativehost';
             } else {
-                console.log('[API Mode] 自动检测：NativeHost 不可用，使用 WebAPI 模式');
+                console.warn('[API Mode] 自动检测：NativeHost 不可用，使用 WebAPI 模式');
                 return 'webapi';
             }
         }
 
         // 默认使用 WebAPI
-        console.log('[API Mode] 使用默认 WebAPI 模式');
         return 'webapi';
     },
 

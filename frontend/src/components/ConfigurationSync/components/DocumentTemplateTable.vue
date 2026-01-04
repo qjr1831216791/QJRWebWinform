@@ -7,7 +7,7 @@
                     <span>{{ envirLabel[0] }}</span>
                 </div>
                 <div>
-                    <el-table :height="pagingTableHeight" :data="tableData.ecFrom" :key="tableKey + '_envirFrom'" border
+                    <el-table :height="tableHeight" :data="tableData.ecFrom" :key="tableKey + '_envirFrom'" border
                         style="width: 100%" v-loading="loading" :default-sort="{
                             prop: 'name',
                             order: 'ascending',
@@ -48,7 +48,7 @@
                     <span>{{ envirLabel[1] }}</span>
                 </div>
                 <div>
-                    <el-table :height="pagingTableHeight" :data="tableData.ecTo" :key="tableKey + '_envirTo'" border
+                    <el-table :height="tableHeight" :data="tableData.ecTo" :key="tableKey + '_envirTo'" border
                         style="width: 100%" v-loading="loading" :default-sort="{
                             prop: 'name',
                             order: 'ascending',
@@ -120,11 +120,6 @@ export default {
     mounted() {
     },
     computed: {
-        // 带有分页的Table的高度
-        pagingTableHeight() {
-            let tableHeight = parseInt(this.tableHeight);
-            return tableHeight - 30 + "px";
-        },
         // 检测是否为桌面端环境（复用 JsCrmHelper 的方法）
         isDesktop() {
             return this.jshelper && this.jshelper.isDesktopEnvironment 

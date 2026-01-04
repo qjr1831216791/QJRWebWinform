@@ -276,7 +276,7 @@ export default {
                 ecFromCopy: [],
                 ecFromTotalRecord: 0,
             }, //数据
-            tableHeight: "520px", //表格高度
+            defaultTableHeight: "520", //表格高度
             tableKey: 1, //刷新表格的Key
             loading: false, //是否加载数据中
             entityOptionsLoading: false, //是否加载实体名称中
@@ -303,6 +303,18 @@ export default {
         this.$on('environment-change', this.environmentChange);
     },
     computed: {
+        // 检测是否为桌面端环境（复用 JsCrmHelper 的方法）
+        isDesktop() {
+            return this.jshelper && this.jshelper.isDesktopEnvironment
+                ? this.jshelper.isDesktopEnvironment()
+                : false;
+        },
+        // Table高度
+        tableHeight() {
+            let height = parseInt(this.defaultTableHeight);
+            if (this.isDesktop) return height + 100 + "px";
+            return height + "px";
+        },
     },
     methods: {
         //环境切换事件
@@ -530,15 +542,15 @@ export default {
         //table模糊搜索事件
         dataSearchOnChange(val) {
             let filteredData = this.tableData.ecFromCopy;
-            
+
             // 关键字过滤
             if (!this.rtcrm.isNullOrWhiteSpace(val)) {
                 filteredData = filteredData.filter(item => {
-                    return item.logicalName.indexOf(val) !== -1 || 
-                           item.displayName.indexOf(val) !== -1;
+                    return item.logicalName.indexOf(val) !== -1 ||
+                        item.displayName.indexOf(val) !== -1;
                 });
             }
-            
+
             // 字段类型过滤
             if (!this.rtcrm.isNull(this.input.attributeType) &&
                 !this.rtcrm.isNullOrWhiteSpace(this.input.attributeType.toString())) {
@@ -546,7 +558,7 @@ export default {
                     return this.matchFieldType(item.attributeType, this.input.attributeType);
                 });
             }
-            
+
             this.$set(this.tableData, "ecFrom", filteredData);
             this.$set(this, "tableKey", this.tableKey + 1); //刷新Table
         },
@@ -581,12 +593,12 @@ export default {
                 4: ['Picklist', 'Status', 'State', 'MultiSelectPicklist'], // Picklist
                 5: ['Memo', 'String']                          // String
             };
-            
+
             // 通过映射关系匹配
             if (typeMapping[selectedType] && typeMapping[selectedType].includes(actualType)) {
                 return true;
             }
-            
+
             return false;
         },
 

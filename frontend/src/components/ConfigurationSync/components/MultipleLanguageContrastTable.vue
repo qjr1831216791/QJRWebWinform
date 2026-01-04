@@ -107,6 +107,12 @@ export default {
         handleSelectionChange(val) {
             this.$emit('handle-selection-change', val);
         },
+
+        // 带有分页的Table的高度
+        pagingTableHeight() {
+            let tableHeight = parseInt(this.tableHeight);
+            return tableHeight - 65 + "px";
+        },
     },
 };
 </script>

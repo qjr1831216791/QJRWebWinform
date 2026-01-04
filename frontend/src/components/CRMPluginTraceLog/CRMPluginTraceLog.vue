@@ -49,13 +49,12 @@
                             <el-form-item prop="createdonDR" label="创建、修改时间：" required>
                                 <el-date-picker size="small" v-model="input.createdonDR" type="datetimerange"
                                     range-separator="至" start-placeholder="开始日期时间" end-placeholder="结束日期时间"
-                                    :default-time="['00:00:00', '23:59:59']"
-                                    :picker-options="pickerOptions"
+                                    :default-time="['00:00:00', '23:59:59']" :picker-options="pickerOptions"
                                     :disabled="loading" @focus="handleDatePickerFocus">
                                 </el-date-picker>
                             </el-form-item>
                         </el-col>
-                        
+
                         <!-- 实体名称 -->
                         <el-col :span="6">
                             <el-form-item prop="entityName" label="实体名称" label-width="80px">
@@ -83,15 +82,14 @@
                                     <el-col :span="12">
                                         <el-table :height="pagingTableHeight" :data="tableData.ecFrom"
                                             :key="tableKey + '_envirFrom'" border style="width: 100%"
-                                            v-loading="loading"
-                                            @row-click="handleRowClick" highlight-current-row>
+                                            v-loading="loading" @row-click="handleRowClick" highlight-current-row>
                                             <!-- 行号 -->
                                             <el-table-column type="index" align="center" show-overflow-tooltip
                                                 width="60">
                                             </el-table-column>
                                             <!-- 插件名称 -->
-                                            <el-table-column prop="typename" label="插件名称"
-                                                show-overflow-tooltip width="360">
+                                            <el-table-column prop="typename" label="插件名称" show-overflow-tooltip
+                                                width="360">
                                                 <template slot-scope="scope">
                                                     <div class="text-content text-ellipsis">
                                                         <div class="text-inner text-ellipsis">
@@ -105,12 +103,11 @@
                                                 </template>
                                             </el-table-column>
                                             <!-- 消息名称 -->
-                                            <el-table-column prop="messagename" label="消息名称"
-                                                show-overflow-tooltip width="160">
+                                            <el-table-column prop="messagename" label="消息名称" show-overflow-tooltip
+                                                width="160">
                                             </el-table-column>
                                             <!-- 创建时间 -->
-                                            <el-table-column prop="createdOn" label="创建时间"
-                                                show-overflow-tooltip>
+                                            <el-table-column prop="createdOn" label="创建时间" show-overflow-tooltip>
                                                 <template slot-scope="scope">
                                                     {{ rtcrm.formatDate(new Date(scope.row.createdon), "yyyy-MM-dd hh:mm:ss") }}
                                                 </template>
@@ -126,8 +123,8 @@
                                     </el-col>
                                     <!-- 右侧详细信息面板 -->
                                     <el-col :span="12">
-                                        <el-card class="detail-panel" v-if="selectedRow" :id="'detail-panel-' + tableKey"
-                                            :style="{ height: pagingTableHeight }">
+                                        <el-card class="detail-panel" v-if="selectedRow"
+                                            :id="'detail-panel-' + tableKey" :style="{ height: pagingTableHeight }">
                                             <div slot="header" class="detail-header">
                                                 <span>日志详细信息</span>
                                             </div>
@@ -147,7 +144,8 @@
                                                 </div>
                                                 <div class="detail-item">
                                                     <label>执行时间：</label>
-                                                    <span>{{rtcrm.formatDate(new Date(selectedRow.createdon), "yyyy-MM-dd hh:mm:ss") }}</span>
+                                                    <span>{{ rtcrm.formatDate(new Date(selectedRow.createdon),
+                                                        "yyyy-MM-dd hh:mm:ss") }}</span>
                                                 </div>
                                                 <div class="detail-item">
                                                     <label>执行时长：</label>
@@ -160,9 +158,12 @@
                                                 <div class="detail-item full-width">
                                                     <label>消息内容：</label>
                                                     <div class="message-content">
-                                                        <el-input type="textarea" :id="'message-content-' + tableKey" :value="selectedRow.messageblock || '无'" :rows="15" readonly>
+                                                        <el-input type="textarea" :id="'message-content-' + tableKey"
+                                                            :value="selectedRow.messageblock || '无'" :rows="15"
+                                                            readonly>
                                                         </el-input>
-                                                        <el-button size="mini" type="primary" @click="copyToClipboard(selectedRow.messageblock || '')" 
+                                                        <el-button size="mini" type="primary"
+                                                            @click="copyToClipboard(selectedRow.messageblock || '')"
                                                             style="margin-top: 5px;">
                                                             复制消息内容
                                                         </el-button>
@@ -211,7 +212,7 @@ export default {
                 ecFromCopy: [],
                 ecFromTotalRecord: 0,
             }, //数据
-            tableHeight: "470px", //表格高度
+            defaultTableHeight: "470", //表格高度
             tableKey: 1, //刷新表格的Key
             loading: false, //是否加载数据中
             selectedRow: null, //选中的行数据
@@ -285,6 +286,18 @@ export default {
         pagingTableHeight() {
             let tableHeight = parseInt(this.tableHeight);
             return tableHeight - 30 + "px";
+        },
+        // 检测是否为桌面端环境（复用 JsCrmHelper 的方法）
+        isDesktop() {
+            return this.jshelper && this.jshelper.isDesktopEnvironment
+                ? this.jshelper.isDesktopEnvironment()
+                : false;
+        },
+        // Table高度
+        tableHeight() {
+            let height = parseInt(this.defaultTableHeight);
+            if (this.isDesktop) return height + 90 + "px";
+            return height + "px";
         },
     },
     methods: {
@@ -388,13 +401,13 @@ export default {
                             }
                             if (res.isSuccess) {
                                 let data = res.data;
-                                if (data  && data.Entities) {
+                                if (data && data.Entities) {
                                     // 使用工具方法转换数据格式：将Attributes数组转换为扁平对象
                                     const transformedData = this.transformCRMEntityData(data.Entities);
-                                    
+
                                     _this.$set(_this.tableData, "ecFrom", transformedData);
                                     _this.$set(_this.tableData, "ecFromCopy", transformedData);
-                                    
+
                                     // 处理分页信息
                                     const totalCount = data.TotalRecordCount;
                                     if (totalCount === -1) {
@@ -442,27 +455,27 @@ export default {
             if (!entities || !Array.isArray(entities)) {
                 return [];
             }
-            
+
             return entities.map(entity => {
                 const flatEntity = {
                     Id: entity.Id,
                     LogicalName: entity.LogicalName
                 };
-                
+
                 // 转换Attributes数组为扁平对象
                 if (entity.Attributes && Array.isArray(entity.Attributes)) {
                     entity.Attributes.forEach(attr => {
                         flatEntity[attr.Key] = attr.Value;
                     });
                 }
-                
+
                 // 添加FormattedValues
                 if (entity.FormattedValues && Array.isArray(entity.FormattedValues)) {
                     entity.FormattedValues.forEach(fv => {
                         flatEntity[`${fv.Key}_Formatted`] = fv.Value;
                     });
                 }
-                
+
                 return flatEntity;
             });
         },
@@ -528,7 +541,7 @@ export default {
         //处理行点击事件
         handleRowClick(row) {
             this.selectedRow = row;
-            
+
             // 重置详细信息面板和消息内容的滚动条到顶端
             this.$nextTick(() => {
                 // 重置详细信息面板滚动条
@@ -536,7 +549,7 @@ export default {
                 if (detailPanel) {
                     detailPanel.scrollTop = 0;
                 }
-                
+
                 // 重置消息内容textarea滚动条
                 const messageContent = document.getElementById(`message-content-${this.tableKey}`);
                 if (messageContent) {
@@ -573,9 +586,9 @@ export default {
             if (!this.rtcrm.isNullOrWhiteSpace(this.input.pluginName2)) {
                 pluginNameList.push(this.input.pluginName2);
             }
-            if(!this.rtcrm.isNull(pluginNameList) && pluginNameList.length > 0){
+            if (!this.rtcrm.isNull(pluginNameList) && pluginNameList.length > 0) {
                 let pluginNameFilter = "";
-                for(let i of pluginNameList){
+                for (let i of pluginNameList) {
                     pluginNameFilter += `<condition attribute="typename" operator="like" value="${i}%" />`;
                 }
                 filters.push(`<filter type="or">${pluginNameFilter}</filter>`);
@@ -586,22 +599,22 @@ export default {
                 // Fetch XML 会将日期过滤转换为 UTC 时间，因此需要将本地时间转换为 UTC 时间
                 const startDate = new Date(this.input.createdonDR[0]);
                 const endDate = new Date(this.input.createdonDR[1]);
-                
+
                 // 获取时区偏移量（分钟），getTimezoneOffset() 返回本地时间与 UTC 的差值
                 // 例如 UTC+8 返回 -480，UTC-5 返回 300
                 const timezoneOffset = startDate.getTimezoneOffset();
-                
+
                 // 将本地时间转换为 UTC 时间（减去时区偏移量，因为 offset 是负数）
                 // UTC 时间 = 本地时间 - offset * 60 * 1000（毫秒）
                 const startDateUTC = new Date(startDate.getTime() + timezoneOffset * 60 * 1000);
                 const endDateUTC = new Date(endDate.getTime() + timezoneOffset * 60 * 1000);
-                
+
                 const startDateStr = this.rtcrm.formatDate(startDateUTC, "yyyy-MM-dd hh:mm:ss");
                 const endDateStr = this.rtcrm.formatDate(endDateUTC, "yyyy-MM-dd hh:mm:ss");
-                
+
                 filters.push(`<condition attribute="createdon" operator="between"><value>${startDateStr}</value><value>${endDateStr}</value></condition>`);
             }
-            
+
             // 实体名称
             if (!this.rtcrm.isNullOrWhiteSpace(this.input.entityName)) {
                 filters.push(`<condition attribute="primaryentity" operator="eq" value="${this.input.entityName}" />`);
@@ -645,12 +658,12 @@ export default {
             if (this.input.createdonDR && Array.isArray(this.input.createdonDR) && this.input.createdonDR.length === 2) {
                 const startDate = new Date(this.input.createdonDR[0]);
                 const endDate = new Date(this.input.createdonDR[1]);
-                
+
                 // 设置开始时间为当天的00:00:00
                 startDate.setHours(0, 0, 0, 0);
                 // 设置结束时间为当天的23:59:59
                 endDate.setHours(23, 59, 59, 999);
-                
+
                 // 更新日期范围
                 this.$set(this.input, 'createdonDR', [startDate, endDate]);
             }

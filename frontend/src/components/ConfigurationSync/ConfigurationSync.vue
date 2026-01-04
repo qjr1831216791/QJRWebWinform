@@ -68,8 +68,8 @@
                 <!-- 表格过滤控件 -->
                 <el-row :gutter="24" style="margin-bottom: 15px;">
                   <el-col :offset="20" :span="4">
-                    <el-input size="small" v-model="input.tableFilter" placeholder="输入关键字搜索" 
-                      clearable :disabled="loading" @change="handleTableFilter">
+                    <el-input size="small" v-model="input.tableFilter" placeholder="输入关键字搜索" clearable
+                      :disabled="loading" @change="handleTableFilter">
                     </el-input>
                   </el-col>
                 </el-row>
@@ -94,9 +94,9 @@
                   :multipleSelection="multipleSelection"
                   @handle-selection-change="handleSelectionChange"></ribbon-table>
                 <!-- 重复性检测 -->
-                <duplicate-detect-table v-else-if="item.entityName === 'new_duplicatedetect'" :tableData="filteredTableData"
-                  :tableHeight="tableHeight" :loading="loading" :envirLabel="envirLabel" :tableKey="tableKey"
-                  :multipleSelection="multipleSelection"
+                <duplicate-detect-table v-else-if="item.entityName === 'new_duplicatedetect'"
+                  :tableData="filteredTableData" :tableHeight="tableHeight" :loading="loading" :envirLabel="envirLabel"
+                  :tableKey="tableKey" :multipleSelection="multipleSelection"
                   @handle-selection-change="handleSelectionChange"></duplicate-detect-table>
                 <!-- 数据导入 -->
                 <import-table v-else-if="item.entityName === 'new_import'" :tableData="filteredTableData"
@@ -104,20 +104,20 @@
                   :multipleSelection="multipleSelection"
                   @handle-selection-change="handleSelectionChange"></import-table>
                 <!-- CommonDeleteCheck -->
-                <common-delete-check-table v-else-if="item.entityName === 'commondeletecheck'" :tableData="filteredTableData"
-                  :tableHeight="tableHeight" :loading="loading" :envirLabel="envirLabel" :tableKey="tableKey"
-                  :multipleSelection="multipleSelection"
+                <common-delete-check-table v-else-if="item.entityName === 'commondeletecheck'"
+                  :tableData="filteredTableData" :tableHeight="tableHeight" :loading="loading" :envirLabel="envirLabel"
+                  :tableKey="tableKey" :multipleSelection="multipleSelection"
                   @handle-selection-change="handleSelectionChange"></common-delete-check-table>
                 <!-- 系统模板 -->
-                <document-template-table v-else-if="item.entityName === 'documenttemplate'" :tableData="filteredTableData"
-                  :tableHeight="tableHeight" :loading="loading" :envirLabel="envirLabel" :tableKey="tableKey"
-                  :multipleSelection="multipleSelection" :input="input" @form-loading="formLoading"
+                <document-template-table v-else-if="item.entityName === 'documenttemplate'"
+                  :tableData="filteredTableData" :tableHeight="tableHeight" :loading="loading" :envirLabel="envirLabel"
+                  :tableKey="tableKey" :multipleSelection="multipleSelection" :input="input" @form-loading="formLoading"
                   @form-loading-close="formLoadingClose" @add-message-tab="addMessageTab" @show-message="showMessage"
                   @handle-selection-change="handleSelectionChange"></document-template-table>
                 <!-- 语言配置 -->
-                <language-config-table v-else-if="item.entityName === 'new_languageconfig'" :tableData="filteredTableData"
-                  :tableHeight="tableHeight" :loading="loading" :envirLabel="envirLabel" :tableKey="tableKey"
-                  :multipleSelection="multipleSelection" :input="input" @form-loading="formLoading"
+                <language-config-table v-else-if="item.entityName === 'new_languageconfig'"
+                  :tableData="filteredTableData" :tableHeight="tableHeight" :loading="loading" :envirLabel="envirLabel"
+                  :tableKey="tableKey" :multipleSelection="multipleSelection" :input="input" @form-loading="formLoading"
                   @form-loading-close="formLoadingClose" @add-message-tab="addMessageTab" @show-message="showMessage"
                   @handle-selection-change="handleSelectionChange" @handle-size-change="handleSizeChange"
                   @handle-current-change="handleCurrentChange" @handle-size-change2="handleSizeChange2"
@@ -128,9 +128,9 @@
                   :tableKey="tableKey" :multipleSelection="multipleSelection"
                   @handle-selection-change="handleSelectionChange"></multiple-language-contrast-table>
                 <!-- 数据多语言 -->
-                <data-language-config-table v-if="item.entityName === 'new_data_languageconfig'" :tableData="filteredTableData"
-                  :tableHeight="tableHeight" :loading="loading" :envirLabel="envirLabel" :tableKey="tableKey"
-                  :multipleSelection="multipleSelection" :input="input" @form-loading="formLoading"
+                <data-language-config-table v-if="item.entityName === 'new_data_languageconfig'"
+                  :tableData="filteredTableData" :tableHeight="tableHeight" :loading="loading" :envirLabel="envirLabel"
+                  :tableKey="tableKey" :multipleSelection="multipleSelection" :input="input" @form-loading="formLoading"
                   @form-loading-close="formLoadingClose" @add-message-tab="addMessageTab" @show-message="showMessage"
                   @handle-selection-change="handleSelectionChange" @handle-size-change="handleSizeChange"
                   @handle-current-change="handleCurrentChange" @handle-size-change2="handleSizeChange2"
@@ -185,11 +185,11 @@ export default {
         ecTo: [],
         ecToTotalRecord: 0,
       }, //数据
+      defaultTableHeight: "370", //表格高度
       filteredTableData: {
         ecFrom: [],
         ecTo: [],
       }, //过滤后的数据
-      tableHeight: "335px", //表格高度
       tableKey: 1, //刷新表格的Key
       multipleSelection: [], //表格选中
       loading: false, //是否加载数据中
@@ -271,7 +271,19 @@ export default {
     // 是否显示{创建、修改时间区间}
     createdonRangeShow() {
       return ["new_languageconfig", "new_data_languageconfig"].includes(this.nowTabName);
-    }
+    },
+    // 检测是否为桌面端环境（复用 JsCrmHelper 的方法）
+    isDesktop() {
+      return this.jshelper && this.jshelper.isDesktopEnvironment
+        ? this.jshelper.isDesktopEnvironment()
+        : false;
+    },
+    // Table高度
+    tableHeight() {
+      let height = parseInt(this.defaultTableHeight);
+      if (this.isDesktop) return height + 95 + "px";
+      return height + "px";
+    },
   },
   methods: {
     //配置文件初始化
@@ -711,7 +723,7 @@ export default {
     //过滤表格数据
     filterTableData: function () {
       const filterText = this.input.tableFilter.toLowerCase();
-      
+
       if (this.rtcrm.isNullOrWhiteSpace(filterText)) {
         // 如果没有过滤条件，显示所有数据
         this.$set(this.filteredTableData, "ecFrom", this.tableData.ecFrom);
@@ -721,16 +733,16 @@ export default {
         const filteredEcFrom = this.tableData.ecFrom.filter(item => {
           return this.matchFilter(item, filterText);
         });
-        
+
         // 过滤ecTo数据
         const filteredEcTo = this.tableData.ecTo.filter(item => {
           return this.matchFilter(item, filterText);
         });
-        
+
         this.$set(this.filteredTableData, "ecFrom", filteredEcFrom);
         this.$set(this.filteredTableData, "ecTo", filteredEcTo);
       }
-      
+
       // 刷新表格
       this.$set(this, "tableKey", this.tableKey + 1);
     },
@@ -738,49 +750,49 @@ export default {
     //匹配过滤条件
     matchFilter: function (item, filterText) {
       if (!item) return false;
-      
+
       // 根据当前配置项类型匹配不同的字段
       switch (this.nowTabName) {
         case "new_systemparameter":
-          return this.matchString(item.new_name, filterText) || 
-                 this.matchString(item.new_value, filterText) || 
-                 this.matchString(item.new_desc, filterText);
+          return this.matchString(item.new_name, filterText) ||
+            this.matchString(item.new_value, filterText) ||
+            this.matchString(item.new_desc, filterText);
         case "new_autonumber":
-          return this.matchString(item.new_name, filterText) || 
-                 this.matchString(item.new_nofieldname, filterText) || 
-                 this.matchString(item.new_prefix, filterText);
+          return this.matchString(item.new_name, filterText) ||
+            this.matchString(item.new_nofieldname, filterText) ||
+            this.matchString(item.new_prefix, filterText);
         case "new_sumrelationshipdetail":
-          return this.matchString(item.new_name, filterText) || 
-                 this.matchString(item.new_desc, filterText);
+          return this.matchString(item.new_name, filterText) ||
+            this.matchString(item.new_desc, filterText);
         case "new_ribbon":
-          return this.matchString(item.new_name, filterText) || 
-                 this.matchString(item.new_desc, filterText);
+          return this.matchString(item.new_name, filterText) ||
+            this.matchString(item.new_desc, filterText);
         case "new_duplicatedetect":
-          return this.matchString(item.new_name, filterText) || 
-                 this.matchString(item.new_desc, filterText);
+          return this.matchString(item.new_name, filterText) ||
+            this.matchString(item.new_desc, filterText);
         case "new_import":
-          return this.matchString(item.new_name, filterText) || 
-                 this.matchString(item.new_desc, filterText);
+          return this.matchString(item.new_name, filterText) ||
+            this.matchString(item.new_desc, filterText);
         case "commondeletecheck":
-          return this.matchString(item.new_name, filterText) || 
-                 this.matchString(item.new_desc, filterText);
+          return this.matchString(item.new_name, filterText) ||
+            this.matchString(item.new_desc, filterText);
         case "documenttemplate":
-          return this.matchString(item.new_name, filterText) || 
-                 this.matchString(item.new_desc, filterText);
+          return this.matchString(item.new_name, filterText) ||
+            this.matchString(item.new_desc, filterText);
         case "new_languageconfig":
-          return this.matchString(item.new_name, filterText) || 
-                 this.matchString(item.new_content, filterText) || 
-                 this.matchString(item.new_note, filterText);
+          return this.matchString(item.new_name, filterText) ||
+            this.matchString(item.new_content, filterText) ||
+            this.matchString(item.new_note, filterText);
         case "new_multiple_language_contrast":
-          return this.matchString(item.new_name, filterText) || 
-                 this.matchString(item.new_desc, filterText);
+          return this.matchString(item.new_name, filterText) ||
+            this.matchString(item.new_desc, filterText);
         case "new_data_languageconfig":
-          return this.matchString(item.new_name, filterText) || 
-                 this.matchString(item.new_content, filterText) || 
-                 this.matchString(item.new_note, filterText);
+          return this.matchString(item.new_name, filterText) ||
+            this.matchString(item.new_content, filterText) ||
+            this.matchString(item.new_note, filterText);
         default:
           // 通用匹配，尝试匹配所有可能的字符串字段
-          return Object.values(item).some(value => 
+          return Object.values(item).some(value =>
             typeof value === 'string' && this.matchString(value, filterText)
           );
       }

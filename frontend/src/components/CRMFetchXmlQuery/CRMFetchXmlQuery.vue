@@ -115,7 +115,7 @@ export default {
             tableData: [], // 表格数据
             tableDataTotalRecord: 0, // 总记录数
             tableColumns: [], // 动态列
-            tableHeight: "555px", // 表格高度
+            defaultTableHeight: "555", // 表格高度
             tableKey: 1, // 刷新表格的Key
             loading: false, // 是否加载数据中
             fieldMetadataMap: {}, // 字段元数据映射 { "entityName.fieldName": metadata }
@@ -143,6 +143,18 @@ export default {
         actualTableHeight() {
             let tableHeight = parseInt(this.tableHeight);
             return tableHeight - 50 + "px";
+        },
+        // 检测是否为桌面端环境（复用 JsCrmHelper 的方法）
+        isDesktop() {
+            return this.jshelper && this.jshelper.isDesktopEnvironment
+                ? this.jshelper.isDesktopEnvironment()
+                : false;
+        },
+        // Table高度
+        tableHeight() {
+            let height = parseInt(this.defaultTableHeight);
+            if (this.isDesktop) return height + 90 + "px";
+            return height + "px";
         },
     },
     methods: {
