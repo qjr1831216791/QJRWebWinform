@@ -655,12 +655,16 @@ export default {
     .el-select {
         width: 160px;
     }
+}
 
-    .el-input-group__append,
-    .el-input-group__prepend {
-        color: black;
-        background-color: #fff;
-    }
+.entityName-input-with-select /deep/ .el-input-group__append {
+    color: black;
+    background-color: #fff;
+}
+
+.entityName-input-with-select /deep/ .el-input-group__prepend {
+    color: black;
+    background-color: #fff;
 }
 
 .text-content {
