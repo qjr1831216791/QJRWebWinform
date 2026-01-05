@@ -53,12 +53,13 @@ $specificFiles = @(
     # Chromium 核心文件
     "chrome_elf.dll",
     "libcef.dll",
-    "libEGL.dll",
-    "libGLESv2.dll",
-    "vulkan-1.dll",
-    "vk_swiftshader.dll",
-    "vk_swiftshader_icd.json",
-    "d3dcompiler_47.dll",
+    # GPU 相关文件（已禁用 GPU 加速，这些文件不需要）
+    # "libEGL.dll",              # 已禁用 GPU，排除
+    # "libGLESv2.dll",            # 已禁用 GPU，排除
+    # "vulkan-1.dll",             # 已禁用 GPU，排除
+    # "vk_swiftshader.dll",       # 已禁用 GPU，排除
+    # "vk_swiftshader_icd.json",  # 已禁用 GPU，排除
+    # "d3dcompiler_47.dll",       # 已禁用 GPU，排除
     "icudtl.dat",
     "resources.pak",
     "snapshot_blob.bin",
@@ -130,12 +131,30 @@ if (Test-Path $wwwrootSource) {
     Write-Host "  ✗ wwwroot\ (缺失)" -ForegroundColor Red
 }
 
-# locales 目录
+# locales 目录（仅复制中英文语言包以减小体积）
+# 说明：根据 App.xaml.cs 中的 AcceptLanguageList 配置，只复制需要的语言文件
+# 可减少空间：约 10-20MB（默认包含 100+ 种语言，只保留 4 个文件）
 $localesSource = Join-Path $sourceDir "locales"
 if (Test-Path $localesSource) {
     $localesTarget = Join-Path $targetDir "locales"
-    Copy-Item -Path $localesSource -Destination $localesTarget -Recurse -Force
-    Write-Host "  ✓ locales\" -ForegroundColor Green
+    New-Item -ItemType Directory -Force -Path $localesTarget | Out-Null
+    
+    # 只复制中英文语言包（zh-CN, zh, en-US, en）
+    $requiredLocales = @("zh-CN.pak", "zh.pak", "en-US.pak", "en.pak")
+    $copiedLocaleCount = 0
+    foreach ($locale in $requiredLocales) {
+        $localeFile = Join-Path $localesSource $locale
+        if (Test-Path $localeFile) {
+            Copy-Item -Path $localeFile -Destination $localesTarget -Force
+            $copiedLocaleCount++
+        }
+    }
+    
+    if ($copiedLocaleCount -gt 0) {
+        Write-Host "  ✓ locales\ (仅包含 $copiedLocaleCount 个语言包: 中文、英文)" -ForegroundColor Green
+    } else {
+        Write-Host "  ⚠ locales\ (未找到需要的语言包)" -ForegroundColor Yellow
+    }
 } else {
     Write-Host "  ⚠ locales\ (未找到，跳过)" -ForegroundColor Yellow
 }
@@ -177,6 +196,7 @@ Write-Host "已排除的文件类型:" -ForegroundColor Cyan
 Write-Host "  - *.pdb (调试符号文件)" -ForegroundColor Gray
 Write-Host "  - *.xml (XML 文档文件)" -ForegroundColor Gray
 Write-Host "  - DawnCache, GPUCache, Logs (运行时生成目录)" -ForegroundColor Gray
+Write-Host "  - GPU 相关文件 (已禁用 GPU 加速): libEGL.dll, libGLESv2.dll, vulkan-1.dll, vk_swiftshader.dll, d3dcompiler_47.dll 等" -ForegroundColor Gray
 Write-Host ""
 
 if ($missingFiles.Count -gt 0) {
