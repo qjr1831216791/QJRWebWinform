@@ -20,6 +20,43 @@
                                 </el-select>
                             </el-form-item>
                         </el-col>
+
+                        <!-- 实体名称 -->
+                        <el-col :span="8">
+                            <el-form-item prop="entityName" label="实体名称" label-width="80px" required>
+                                <el-input size="small" :disabled="loading || entityOptionsLoading" readonly
+                                    v-model="input.entityName" style="vertical-align: middle;"
+                                    class="entityName-input-with-select">
+                                    <el-select size="small" slot="prepend" clearable filterable
+                                        :disabled="loading || entityOptionsLoading" v-model="input.entityObj"
+                                        :filter-method="entitySelectFilter" value-key="key" @change="entityNameChange">
+                                        <el-option v-for="item in entityOptions" :key="item.key" :label="item.label"
+                                            :value="item">
+                                        </el-option>
+                                    </el-select>
+                                </el-input>
+                            </el-form-item>
+                        </el-col>
+
+                        <!-- 实体视图 -->
+                        <el-col :span="8">
+                            <el-form-item label="实体视图" label-width="80px">
+                                <div class="entityView-input-with-select" style="display: flex; align-items: center;">
+                                    <el-select size="small" clearable filterable
+                                        :disabled="loading || entityViewOptionsLoading" v-model="input.entityViewObj"
+                                        :filter-method="entityViewSelectFilter" value-key="savedqueryid"
+                                        @change="entityViewChange" placeholder="请选择实体视图">
+                                        <el-option v-for="item in entityViewOptions" :key="item.savedqueryid"
+                                            :label="item.name" :value="item">
+                                        </el-option>
+                                    </el-select>
+                                    <el-button size="small" icon="el-icon-search"
+                                        :loading="loading || entityViewOptionsLoading" @click="queryEntityViews"
+                                        :disabled="input.objecttypecode === -1">
+                                    </el-button>
+                                </div>
+                            </el-form-item>
+                        </el-col>
                     </el-row>
                 </el-form>
                 <!-- 展示内容 -->
@@ -40,7 +77,8 @@
                                             </el-table-column>
                                             <!-- 动态列 -->
                                             <el-table-column v-for="column in tableColumns" :key="column.prop"
-                                                :prop="column.prop" :label="column.label" show-overflow-tooltip>
+                                                :width="column.width" :prop="column.prop" :label="column.label"
+                                                show-overflow-tooltip>
                                                 <!-- 日期字段格式化显示 -->
                                                 <template slot-scope="scope">
                                                     <span v-if="column.isDateTime && scope.row[column.prop]">
@@ -103,12 +141,22 @@ export default {
         return {
             // 环境
             environments: [{ label: "无效环境请刷新", key: "undefined" }],
+            // 实体名称
+            entityOptions: [],
+            entityOptionsCopy: [],
+            // 实体视图
+            entityViewOptions: [],
+            entityViewOptionsCopy: [],
             // 输入
             input: {
                 envirFrom: "dev",
                 fetchXml: "",
                 pageIndex: 1, // 当前页码
                 pageSize: 50, // 每页显示数量
+                entityObj: null,// 实体对象
+                entityName: "",// 实体名称
+                objecttypecode: -1,// 实体类型代码
+                entityViewObj: null,// 实体视图对象
             },
             sql2FetchXmlUrl: "http://www.sql2fetchxml.com/",
             sql2FetchXmlUrlTooltip: true,
@@ -118,6 +166,9 @@ export default {
             defaultTableHeight: "555", // 表格高度
             tableKey: 1, // 刷新表格的Key
             loading: false, // 是否加载数据中
+            entityOptionsLoading: false, // 是否加载实体名称中
+            entityViewOptionsLoading: false, // 是否加载实体视图中
+            currentEntityViewLayoutXml: null, // 当前选中的实体视图的layoutxml
             fieldMetadataMap: {}, // 字段元数据映射 { "entityName.fieldName": metadata }
             entityMetadataCache: {}, // 实体元数据缓存 { "envir_entityName": metadataArray }
             entityMetadataPromises: {}, // 正在进行的查询Promise缓存 { "envir_entityName": Promise }，避免并发重复查询
@@ -129,6 +180,9 @@ export default {
         let that = this;
         // 获取系统参数
         this.getEnvironments();
+
+        // 获取实体名称
+        this.getEntityOptions();
 
         setTimeout(() => {
             that.$set(that, "sql2FetchXmlUrlTooltip", false);
@@ -169,12 +223,22 @@ export default {
                 fetchXml: "",
                 pageIndex: 1,
                 pageSize: 50,
+                entityObj: null,
+                entityName: "",
+                objecttypecode: -1,
+                entityViewObj: null,
             });
             this.$set(this, "tableDataTotalRecord", 0);
+            this.$set(this, "entityViewOptions", []);
+            this.$set(this, "entityViewOptionsCopy", []);
+            this.$set(this, "currentEntityViewLayoutXml", null);
             this.$set(this, "tableKey", this.tableKey + 1); // 刷新Table
 
             // 重新获取环境参数
             this.getEnvironments();
+
+            // 重新获取实体名称
+            this.getEntityOptions();
         },
 
         // 获取环境参数
@@ -209,6 +273,66 @@ export default {
                 });
         },
 
+        // 获取实体名称
+        getEntityOptions: function () {
+            let _this = this;
+            this.$set(this, "loading", true);
+            this.$set(this, "entityOptionsLoading", true);
+            this.$set(this, "entityOptions", []);
+            this.$set(this, "entityOptionsCopy", []);
+
+            let input = {
+                envir: this.input.envirFrom,
+                isCustomEntity: false,
+            };
+            this.jshelper
+                .invokeHiddenApiAsync(
+                    "new_hbxn_common",
+                    "RetrieveEntityMetadata/GetAllEntityMetadata",
+                    JSON.stringify(input)
+                )
+                .then((res) => {
+                    _this.$set(_this, "loading", false);
+                    _this.$set(_this, "entityOptionsLoading", false);
+                    if (this.rtcrm.isNull(res) || this.rtcrm.isNull(res.data)) {
+                        this.jshelper.openAlertDialog(this,
+                            "返回数据为空", "获取实体列表"
+                        );
+                        return;
+                    }
+                    if (res.isSuccess) {
+                        let data = res.data;
+                        if (!this.rtcrm.isNull(data)) {
+                            _this.$set(_this, "entityOptions", data);
+                            _this.$set(_this, "entityOptionsCopy", data);
+                        }
+                    } else {
+                        this.jshelper.openAlertDialog(this, res.message, "获取实体列表");
+                    }
+                })
+                .catch((err) => {
+                    _this.$set(_this, "loading", false);
+                    _this.$set(_this, "entityOptionsLoading", false);
+                    _this.jshelper.openAlertDialog(_this, err.message, "获取实体列表");
+                });
+        },
+
+        // 实体名称下拉搜索事件
+        entitySelectFilter(val) {
+            if (val) {
+                this.entityOptions = this.entityOptionsCopy.filter((item) => {
+                    if (!!~item.label.indexOf(val) || !!~item.label.toUpperCase().indexOf(val.toUpperCase())) {
+                        return true
+                    }
+                    else if (!!~item.key.indexOf(val) || !!~item.key.toUpperCase().indexOf(val.toUpperCase())) {
+                        return true
+                    }
+                })
+            } else {
+                this.entityOptions = this.entityOptionsCopy;
+            }
+        },
+
         // envirFrom下拉Change事件
         envirFromChange: function () {
             // 环境切换时清空查询结果和缓存（因为不同环境的元数据可能不同）
@@ -220,6 +344,14 @@ export default {
             this.$set(this, "tableDataTotalRecord", 0);
             this.$set(this.input, "pageIndex", 1);
             this.$set(this, "tableKey", this.tableKey + 1);
+            // 清空实体视图相关数据
+            this.$set(this, "entityViewOptions", []);
+            this.$set(this, "entityViewOptionsCopy", []);
+            this.$set(this.input, "entityViewObj", null);
+            this.$set(this, "currentEntityViewLayoutXml", null);
+
+            // 重新获取实体名称
+            this.getEntityOptions();
         },
 
         // 执行查询
@@ -503,7 +635,7 @@ export default {
                         columnLabel = `${prefix}.${columnLabel}`;
                     }
 
-                    columns.push({
+                    const column = {
                         prop: key,
                         label: columnLabel,
                         fieldName: attrName,
@@ -513,11 +645,87 @@ export default {
                         metadata: metadata,
                         isDateTime: isDateTime,
                         dateTimeFormat: metadata ? metadata.dateTimeFormat : null
-                    });
+                    };
+                    columns.push(column);
                 });
             });
 
+            // 如果存在layoutxml，根据layoutxml中的cell width动态调整列宽
+            if (this.currentEntityViewLayoutXml) {
+                this.applyLayoutXmlColumnWidths(columns);
+            }
+
             this.$set(this, "tableColumns", columns);
+            console.log(columns);
+        },
+
+        // 根据layoutxml中的cell width动态调整列宽
+        applyLayoutXmlColumnWidths: function (columns) {
+            try {
+                // 解析layoutxml
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(this.currentEntityViewLayoutXml, "text/xml");
+
+                // 检查解析错误
+                const parseError = xmlDoc.querySelector("parsererror");
+                if (parseError) {
+                    console.warn("解析layoutxml失败:", parseError.textContent);
+                    return;
+                }
+
+                // 获取所有cell节点
+                const cells = xmlDoc.querySelectorAll("cell");
+                const cellWidthMap = {};
+                // 构建字段名到宽度的映射
+                for (let i = 0; i < cells.length; i++) {
+                    const cell = cells[i];
+                    const cellName = cell.getAttribute("name");
+                    const cellWidth = cell.getAttribute("width");
+                    if (cellName && cellWidth) {
+                        // 将宽度转换为数字（layoutxml中的width可能是字符串）
+                        const width = parseInt(cellWidth, 10);
+                        if (!isNaN(width) && width > 0) {
+                            cellWidthMap[cellName] = width;
+                        }
+                    }
+                }
+
+                // 根据cellWidthMap调整列宽
+                columns.forEach(column => {
+                    // 尝试匹配字段名（可能是主实体字段或linkEntity字段）
+                    let matchedWidth = null;
+
+                    // 1. 直接匹配字段名（主实体字段或linkEntity字段，如果layoutxml中cell的name就是字段名）
+                    if (cellWidthMap.hasOwnProperty(column.fieldName)) {
+                        matchedWidth = cellWidthMap[column.fieldName];
+                    }
+                    // 2. 如果是linkEntity字段，尝试匹配 alias.fieldName 格式
+                    else if (column.isLinkEntity && column.alias) {
+                        const aliasFieldName = `${column.alias}.${column.fieldName}`;
+                        if (cellWidthMap.hasOwnProperty(aliasFieldName)) {
+                            matchedWidth = cellWidthMap[aliasFieldName];
+                        }
+                    }
+                    // 3. 如果是linkEntity字段，尝试匹配 entityName.fieldName 格式（如果没有alias）
+                    else if (column.isLinkEntity && !column.alias) {
+                        const entityFieldName = `${column.entityName}.${column.fieldName}`;
+                        if (cellWidthMap.hasOwnProperty(entityFieldName)) {
+                            matchedWidth = cellWidthMap[entityFieldName];
+                        }
+                    }
+                    // 4. 尝试匹配列的prop（用于处理可能的其他格式）
+                    else if (cellWidthMap.hasOwnProperty(column.prop)) {
+                        matchedWidth = cellWidthMap[column.prop];
+                    }
+
+                    // 如果找到匹配的宽度，设置列宽
+                    if (matchedWidth !== null) {
+                        column.width = matchedWidth;
+                    }
+                });
+            } catch (error) {
+                console.warn("应用layoutxml列宽失败:", error);
+            }
         },
 
         // 执行 FetchXml 查询（返回Promise）
@@ -929,6 +1137,165 @@ export default {
                 });
         },
 
+        // 实体名称Change事件
+        entityNameChange: function (val) {
+            let entityName = "";
+            let objecttypecode = -1;
+            if (!this.rtcrm.isNull(val)) {
+                entityName = val.key;
+                objecttypecode = val.objecttypecode;
+            }
+            this.$set(this.input, "entityName", entityName);
+            this.$set(this.input, "objecttypecode", objecttypecode);
+            // 清空实体视图选择
+            this.$set(this.input, "entityViewObj", null);
+            this.$set(this, "entityViewOptions", []);
+            this.$set(this, "entityViewOptionsCopy", []);
+            this.$set(this, "currentEntityViewLayoutXml", null);
+        },
+
+        // 查询实体视图
+        queryEntityViews: function () {
+            let _this = this;
+
+            // 验证实体是否已选择
+            if (this.rtcrm.isNullOrWhiteSpace(this.input.entityName) || this.input.objecttypecode === -1) {
+                this.jshelper.openAlertDialog(this, "请先选择实体名称", "查询实体视图");
+                return;
+            }
+
+            // 构建查询实体视图的FetchXml
+            const fetchXml = this.buildEntityViewFetchXml();
+
+            // 清空之前的视图列表
+            this.$set(this, "entityViewOptions", []);
+            this.$set(this, "entityViewOptionsCopy", []);
+            this.$set(this.input, "entityViewObj", null);
+            this.$set(this, "currentEntityViewLayoutXml", null);
+
+            // 开始查询
+            this.$set(this, "loading", true);
+            this.$set(this, "entityViewOptionsLoading", true);
+
+            let input = {
+                envir: this.input.envirFrom,
+                fetchXml: fetchXml,
+                pageIndex: 1,
+                pageSize: 5000 // 获取所有视图
+            };
+
+            this.jshelper
+                .invokeHiddenApiAsync("new_hbxn_common", "RetrieveCRMData/RetrieveCRMDataByFetchXml", input)
+                .then((res) => {
+                    _this.$set(_this, "loading", false);
+                    _this.$set(_this, "entityViewOptionsLoading", false);
+                    if (this.rtcrm.isNull(res) || this.rtcrm.isNull(res.data)) {
+                        this.jshelper.openAlertDialog(this, "返回数据为空", "查询实体视图");
+                        return;
+                    }
+                    if (res.isSuccess) {
+                        let data = res.data;
+                        let views = [];
+                        if (data && data.Entities && Array.isArray(data.Entities)) {
+                            // 转换数据格式
+                            views = data.Entities.map(entity => {
+                                const getAttributeValue = function (key) {
+                                    if (!entity.Attributes || !Array.isArray(entity.Attributes)) return "";
+                                    const attr = entity.Attributes.find(function (a) { return a.Key === key; });
+                                    return attr ? attr.Value : "";
+                                };
+                                const view = {
+                                    savedqueryid: entity.Id,
+                                    name: getAttributeValue("name"),
+                                    fetchxml: getAttributeValue("fetchxml"),
+                                    layoutxml: getAttributeValue("layoutxml"),
+                                    querytype: getAttributeValue("querytype") || null,
+                                    returnedtypecode: getAttributeValue("returnedtypecode") || null
+                                };
+                                return view;
+                            }).filter(function (view) { return view.name; }); // 过滤掉没有名称的视图
+                        } else if (Array.isArray(data)) {
+                            // 兼容旧格式
+                            views = data.map(entity => {
+                                const getAttributeValue = function (key) {
+                                    if (!entity.Attributes || !Array.isArray(entity.Attributes)) return "";
+                                    const attr = entity.Attributes.find(function (a) { return a.Key === key; });
+                                    return attr ? attr.Value : "";
+                                };
+                                const view = {
+                                    savedqueryid: entity.Id || entity.savedqueryid,
+                                    name: entity.name || getAttributeValue("name"),
+                                    fetchxml: entity.fetchxml || getAttributeValue("fetchxml"),
+                                    layoutxml: entity.layoutxml || getAttributeValue("layoutxml"),
+                                    querytype: entity.querytype || getAttributeValue("querytype") || null,
+                                    returnedtypecode: entity.returnedtypecode || getAttributeValue("returnedtypecode") || null
+                                };
+                                return view;
+                            }).filter(function (view) { return view.name; });
+                        }
+
+                        _this.$set(_this, "entityViewOptions", views);
+                        _this.$set(_this, "entityViewOptionsCopy", views);
+                    } else {
+                        this.jshelper.openAlertDialog(this, res.message, "查询实体视图");
+                    }
+                })
+                .catch((err) => {
+                    _this.$set(_this, "loading", false);
+                    _this.$set(_this, "entityViewOptionsLoading", false);
+                    _this.jshelper.openAlertDialog(_this, err.message, "查询实体视图");
+                });
+        },
+
+        // 构建查询实体视图的FetchXml
+        buildEntityViewFetchXml: function () {
+            const objecttypecode = this.input.objecttypecode;
+            const fetchXml = `<fetch mapping="logical" version="1.0">
+  <entity name="savedquery">
+    <attribute name="name" />
+    <attribute name="fetchxml" />
+    <attribute name="layoutxml" />
+    <attribute name="querytype" />
+    <attribute name="returnedtypecode" />
+    <filter>
+      <condition attribute="querytype" operator="eq" value="0" />
+      <condition attribute="returnedtypecode" operator="eq" value="${objecttypecode}" />
+    </filter>
+  </entity>
+</fetch>`;
+            return fetchXml;
+        },
+
+        // 实体视图Change事件
+        entityViewChange: function (val) {
+            if (!this.rtcrm.isNull(val) && val.fetchxml) {
+                // 将选中的视图的fetchxml赋值到查询框
+                this.$set(this.input, "fetchXml", val.fetchxml);
+                // 保存layoutxml，用于动态调整列宽
+                this.$set(this, "currentEntityViewLayoutXml", val.layoutxml || null);
+            } else {
+                // 清空查询框
+                this.$set(this.input, "fetchXml", "");
+                // 清空layoutxml
+                this.$set(this, "currentEntityViewLayoutXml", null);
+            }
+        },
+
+        // 实体视图下拉搜索事件
+        entityViewSelectFilter(val) {
+            if (val) {
+                this.entityViewOptions = this.entityViewOptionsCopy.filter((item) => {
+                    if (!!~item.name.indexOf(val) || !!~item.name.toUpperCase().indexOf(val.toUpperCase())) {
+                        return true
+                    }
+                    else if (item.savedqueryid && (!!~item.savedqueryid.indexOf(val) || !!~item.savedqueryid.toUpperCase().indexOf(val.toUpperCase()))) {
+                        return true
+                    }
+                })
+            } else {
+                this.entityViewOptions = this.entityViewOptionsCopy;
+            }
+        },
     },
 };
 </script>
@@ -971,5 +1338,41 @@ export default {
 
 .input-section {
     margin-bottom: 20px;
+}
+
+.entityName-input-with-select {
+    width: 300px;
+    vertical-align: middle;
+
+    .el-select {
+        width: 160px;
+    }
+}
+
+.entityName-input-with-select /deep/ .el-input-group__append {
+    color: black;
+    background-color: #fff;
+}
+
+.entityName-input-with-select /deep/ .el-input-group__prepend {
+    color: black;
+    background-color: #fff;
+}
+
+.entityView-input-with-select {
+    width: 100%;
+    vertical-align: middle;
+}
+
+.entityView-input-with-select /deep/ .el-button--small {
+    border-radius: 0 3px 3px 0;
+}
+
+.entityView-input-with-select /deep/ .el-button--small {
+    border-radius: 0 3px 3px 0;
+}
+
+.entityView-input-with-select /deep/ .el-input__inner {
+    border-radius: 3px 0 0 3px;
 }
 </style>

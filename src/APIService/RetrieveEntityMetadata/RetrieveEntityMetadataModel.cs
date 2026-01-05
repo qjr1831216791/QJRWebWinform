@@ -8,6 +8,8 @@ namespace APIService.RetrieveEntityMetadata
         public string entityName { get; set; }
 
         public string displayName { get; set; }
+
+        public int objecttypecode { get; set; }
     }
 
     public enum AttributeTypeCode

@@ -44,7 +44,7 @@ namespace APIService.RetrieveEntityMetadata
             {
                 List<EntityOption> entityOptions = GetAllEntityMetadataOptions(OrganizationService, isCustomEntity);
 
-                result.Success(data: entityOptions.Select(e => new { label = e.displayName, key = e.entityName }));
+                result.Success(data: entityOptions.Select(e => new { label = e.displayName, key = e.entityName, objecttypecode = e.objecttypecode }));
             }
             catch (Exception ex)
             {
@@ -96,7 +96,8 @@ namespace APIService.RetrieveEntityMetadata
                             entityOptions.Add(new EntityOption()
                             {
                                 entityName = em.LogicalName,
-                                displayName = em.DisplayName?.UserLocalizedLabel?.Label
+                                displayName = em.DisplayName?.UserLocalizedLabel?.Label,
+                                objecttypecode = em.ObjectTypeCode ?? -1,
                             });
                         }
                         else if (em.DisplayName?.LocalizedLabels != null && em.DisplayName.LocalizedLabels.Any())
@@ -107,7 +108,8 @@ namespace APIService.RetrieveEntityMetadata
                                 entityOptions.Add(new EntityOption()
                                 {
                                     entityName = em.LogicalName,
-                                    displayName = label.Label
+                                    displayName = label.Label,
+                                    objecttypecode = em.ObjectTypeCode ?? -1,
                                 });
                             }
                             else
@@ -115,7 +117,8 @@ namespace APIService.RetrieveEntityMetadata
                                 entityOptions.Add(new EntityOption()
                                 {
                                     entityName = em.LogicalName,
-                                    displayName = em.DisplayName?.UserLocalizedLabel?.Label
+                                    displayName = em.DisplayName?.UserLocalizedLabel?.Label,
+                                    objecttypecode = em.ObjectTypeCode ?? -1,
                                 });
                             }
                         }
@@ -124,7 +127,8 @@ namespace APIService.RetrieveEntityMetadata
                             entityOptions.Add(new EntityOption()
                             {
                                 entityName = em.LogicalName,
-                                displayName = em.DisplayName?.UserLocalizedLabel?.Label
+                                displayName = em.DisplayName?.UserLocalizedLabel?.Label,
+                                objecttypecode = em.ObjectTypeCode ?? -1,
                             });
                         }
                     }
