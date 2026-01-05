@@ -17,6 +17,13 @@ namespace QJRWebWinform.WPF
         public MainWindow()
         {
             InitializeComponent();
+
+            if (WebBrowser.BrowserSettings == null)
+            {
+                WebBrowser.BrowserSettings = new BrowserSettings();
+            }
+            // 非视频内容建议30fps，平衡性能和流畅度
+            WebBrowser.BrowserSettings.WindowlessFrameRate = 120;
         }
 
         private void WebBrowser_Loaded(object sender, RoutedEventArgs e)
@@ -118,19 +125,6 @@ namespace QJRWebWinform.WPF
                 #else
                 MessageBox.Show($"前端文件未找到: {htmlPath}\n请先构建前端项目。", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
                 #endif
-            }
-        }
-
-        /// <summary>
-        /// 从后端调用前端方法（示例）
-        /// </summary>
-        public void CallFrontendMethod(string methodName, object data)
-        {
-            if (WebBrowser.IsBrowserInitialized)
-            {
-                string jsonData = data != null ? Newtonsoft.Json.JsonConvert.SerializeObject(data) : "null";
-                string script = $"if (typeof window.{methodName} === 'function') {{ window.{methodName}({jsonData}); }}";
-                WebBrowser.ExecuteScriptAsync(script);
             }
         }
 
