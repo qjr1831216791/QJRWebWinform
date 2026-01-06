@@ -109,12 +109,12 @@
                                             <!-- 输入区域 -->
                                             <div class="input-section">
                                                 <el-form :model="input" size="medium" label-position="top">
-                                                    <el-form-item>
-                                                        <el-input type="textarea" :rows="17" v-model="input.fetchXml"
+                                                    <el-form-item style="margin-bottom: 10px;">
+                                                        <el-input type="textarea" :rows="18" v-model="input.fetchXml"
                                                             placeholder="请输入 FetchXml 查询字符串" :disabled="loading">
                                                         </el-input>
                                                     </el-form-item>
-                                                    <el-form-item>
+                                                    <el-form-item style="margin-bottom: 0;">
                                                         <el-button type="primary" size="medium" :loading="loading"
                                                             @click="executeQuery" style="width: 100%;">
                                                             搜索
