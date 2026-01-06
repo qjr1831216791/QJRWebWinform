@@ -135,6 +135,8 @@
 </template>
 
 <script>
+import { getCache, setCache } from '@/utils/storageCache';
+
 export default {
     name: 'CRMFetchXmlQuery',
     data() {
@@ -276,6 +278,19 @@ export default {
         // 获取实体名称
         getEntityOptions: function () {
             let _this = this;
+
+            // 生成缓存键（包含环境信息）
+            const cacheKey = `entityOptions_${this.input.envirFrom}`;
+
+            // 先尝试从缓存获取
+            const cachedData = getCache(cacheKey);
+            if (cachedData) {
+                _this.$set(_this, "entityOptions", cachedData);
+                _this.$set(_this, "entityOptionsCopy", cachedData);
+                return;
+            }
+
+            // 缓存中没有，从服务器获取
             this.$set(this, "loading", true);
             this.$set(this, "entityOptionsLoading", true);
             this.$set(this, "entityOptions", []);
@@ -305,6 +320,8 @@ export default {
                         if (!this.rtcrm.isNull(data)) {
                             _this.$set(_this, "entityOptions", data);
                             _this.$set(_this, "entityOptionsCopy", data);
+                            // 将数据存入缓存
+                            setCache(cacheKey, data);
                         }
                     } else {
                         this.jshelper.openAlertDialog(this, res.message, "获取实体列表");
@@ -648,7 +665,7 @@ export default {
                         const entityOption = this.entityOptionsCopy.find(function (option) {
                             return option.key === entityInfo.entityName;
                         });
-                        
+
                         if (entityOption && entityOption.label) {
                             // 如果找到了实体显示名，使用格式：字段名(实体显示名)
                             columnLabel = `${columnLabel}(${entityOption.label})`;
