@@ -23,7 +23,7 @@
 
                         <!-- 实体名称 -->
                         <el-col :span="8">
-                            <el-form-item prop="entityName" label="实体名称" label-width="80px" required>
+                            <el-form-item prop="entityName" label="实体名称" label-width="80px">
                                 <el-input size="small" :disabled="loading || entityOptionsLoading" readonly
                                     v-model="input.entityName" style="vertical-align: middle;"
                                     class="entityName-input-with-select">
@@ -589,8 +589,21 @@ export default {
         generateTableColumns: function (entitiesToQuery, fieldMetadataMap) {
             const columns = [];
 
+            // 找到主实体（用于判断主键字段）
+            const mainEntity = entitiesToQuery.find(function (entity) {
+                return !entity.isLinkEntity;
+            });
+            const mainEntityName = mainEntity ? mainEntity.entityName : null;
+            // 主实体的主键字段格式：{entityName}id
+            const mainEntityPrimaryKey = mainEntityName ? mainEntityName + "id" : null;
+
             entitiesToQuery.forEach(entityInfo => {
                 entityInfo.attributes.forEach(attrName => {
+                    // 如果是主实体的字段，且字段名是主实体的主键字段，则跳过（不显示）
+                    if (!entityInfo.isLinkEntity && mainEntityPrimaryKey && attrName === mainEntityPrimaryKey) {
+                        return; // 跳过主实体的主键字段
+                    }
+
                     // 生成列的 prop（用于数据绑定）
                     // 主实体的字段通常不带前缀，linkEntity 的字段带 alias 前缀
                     let key;
@@ -629,10 +642,21 @@ export default {
                         }
                     }
 
-                    // 如果是 linkEntity，添加前缀（优先使用 alias，否则使用实体名）
+                    // 如果是 linkEntity，尝试从 entityOptions 中获取实体显示名
                     if (entityInfo.isLinkEntity) {
-                        const prefix = entityInfo.alias || entityInfo.entityName;
-                        columnLabel = `${prefix}.${columnLabel}`;
+                        // 在 entityOptions 中查找对应的实体显示名
+                        const entityOption = this.entityOptionsCopy.find(function (option) {
+                            return option.key === entityInfo.entityName;
+                        });
+                        
+                        if (entityOption && entityOption.label) {
+                            // 如果找到了实体显示名，使用格式：字段名(实体显示名)
+                            columnLabel = `${columnLabel}(${entityOption.label})`;
+                        } else {
+                            // 如果没找到，使用原来的格式：alias.字段名 或 entityName.字段名
+                            const prefix = entityInfo.alias || entityInfo.entityName;
+                            columnLabel = `${prefix}.${columnLabel}`;
+                        }
                     }
 
                     const column = {
@@ -656,10 +680,9 @@ export default {
             }
 
             this.$set(this, "tableColumns", columns);
-            console.log(columns);
         },
 
-        // 根据layoutxml中的cell width动态调整列宽
+        // 根据layoutxml中的cell width动态调整列宽，并按layoutxml中的顺序排序
         applyLayoutXmlColumnWidths: function (columns) {
             try {
                 // 解析layoutxml
@@ -675,56 +698,84 @@ export default {
 
                 // 获取所有cell节点
                 const cells = xmlDoc.querySelectorAll("cell");
-                const cellWidthMap = {};
-                // 构建字段名到宽度的映射
+                const cellWidthMap = {}; // 字段名到宽度的映射
+                const cellOrderMap = {}; // 字段名到顺序索引的映射（用于排序）
+                const cellNames = []; // 按顺序保存的字段名列表
+
+                // 构建字段名到宽度和顺序的映射
                 for (let i = 0; i < cells.length; i++) {
                     const cell = cells[i];
                     const cellName = cell.getAttribute("name");
                     const cellWidth = cell.getAttribute("width");
-                    if (cellName && cellWidth) {
-                        // 将宽度转换为数字（layoutxml中的width可能是字符串）
-                        const width = parseInt(cellWidth, 10);
-                        if (!isNaN(width) && width > 0) {
-                            cellWidthMap[cellName] = width;
+                    if (cellName) {
+                        // 记录顺序
+                        cellOrderMap[cellName] = i;
+                        cellNames.push(cellName);
+                        // 记录宽度
+                        if (cellWidth) {
+                            const width = parseInt(cellWidth, 10);
+                            if (!isNaN(width) && width > 0) {
+                                cellWidthMap[cellName] = width;
+                            }
                         }
                     }
                 }
 
-                // 根据cellWidthMap调整列宽
+                // 为每个列找到匹配的cell名称和顺序
+                const columnOrderMap = new Map(); // 列到顺序索引的映射
                 columns.forEach(column => {
-                    // 尝试匹配字段名（可能是主实体字段或linkEntity字段）
-                    let matchedWidth = null;
+                    let matchedCellName = null;
+                    let matchedOrder = null;
 
+                    // 尝试匹配字段名（可能是主实体字段或linkEntity字段）
                     // 1. 直接匹配字段名（主实体字段或linkEntity字段，如果layoutxml中cell的name就是字段名）
-                    if (cellWidthMap.hasOwnProperty(column.fieldName)) {
-                        matchedWidth = cellWidthMap[column.fieldName];
+                    if (cellOrderMap.hasOwnProperty(column.fieldName)) {
+                        matchedCellName = column.fieldName;
+                        matchedOrder = cellOrderMap[column.fieldName];
                     }
                     // 2. 如果是linkEntity字段，尝试匹配 alias.fieldName 格式
                     else if (column.isLinkEntity && column.alias) {
                         const aliasFieldName = `${column.alias}.${column.fieldName}`;
-                        if (cellWidthMap.hasOwnProperty(aliasFieldName)) {
-                            matchedWidth = cellWidthMap[aliasFieldName];
+                        if (cellOrderMap.hasOwnProperty(aliasFieldName)) {
+                            matchedCellName = aliasFieldName;
+                            matchedOrder = cellOrderMap[aliasFieldName];
                         }
                     }
                     // 3. 如果是linkEntity字段，尝试匹配 entityName.fieldName 格式（如果没有alias）
                     else if (column.isLinkEntity && !column.alias) {
                         const entityFieldName = `${column.entityName}.${column.fieldName}`;
-                        if (cellWidthMap.hasOwnProperty(entityFieldName)) {
-                            matchedWidth = cellWidthMap[entityFieldName];
+                        if (cellOrderMap.hasOwnProperty(entityFieldName)) {
+                            matchedCellName = entityFieldName;
+                            matchedOrder = cellOrderMap[entityFieldName];
                         }
                     }
                     // 4. 尝试匹配列的prop（用于处理可能的其他格式）
-                    else if (cellWidthMap.hasOwnProperty(column.prop)) {
-                        matchedWidth = cellWidthMap[column.prop];
+                    else if (cellOrderMap.hasOwnProperty(column.prop)) {
+                        matchedCellName = column.prop;
+                        matchedOrder = cellOrderMap[column.prop];
                     }
 
-                    // 如果找到匹配的宽度，设置列宽
-                    if (matchedWidth !== null) {
-                        column.width = matchedWidth;
+                    // 如果找到匹配的cell，记录顺序并应用宽度
+                    if (matchedCellName !== null && matchedOrder !== null) {
+                        columnOrderMap.set(column, matchedOrder);
+                        // 应用列宽
+                        if (cellWidthMap.hasOwnProperty(matchedCellName)) {
+                            column.width = cellWidthMap[matchedCellName];
+                        }
+                    } else {
+                        // 如果没有匹配到，使用一个很大的索引，确保这些列排在最后
+                        columnOrderMap.set(column, 999999);
                     }
                 });
+
+                // 根据layoutxml中的顺序对列进行排序
+                columns.sort(function (a, b) {
+                    const orderA = columnOrderMap.get(a) !== undefined ? columnOrderMap.get(a) : 999999;
+                    const orderB = columnOrderMap.get(b) !== undefined ? columnOrderMap.get(b) : 999999;
+                    return orderA - orderB;
+                });
             } catch (error) {
-                console.warn("应用layoutxml列宽失败:", error);
+                console.warn("应用layoutxml列宽和排序失败:", error);
             }
         },
 
@@ -893,10 +944,32 @@ export default {
                                 flatEntity[mappedKey] = formattedValuesMap[mappedKey];
                             } else {
                                 // 处理 Attributes 中的原始值
-                                // 如果 Value 是对象且包含 Value 属性（linkEntity 字段可能是这种格式），提取实际值
+                                // 优先提取易读值：兼容 AliasedValue/EntityReference（带 Name）
                                 let actualValue = attr.Value;
-                                if (attr.Value && typeof attr.Value === 'object' && attr.Value.hasOwnProperty('Value')) {
-                                    actualValue = attr.Value.Value;
+                                if (attr.Value && typeof attr.Value === 'object') {
+                                    // 1) EntityReference 或 AliasedValue 内含 Name/name
+                                    if (attr.Value.hasOwnProperty('Name')) {
+                                        actualValue = attr.Value.Name;
+                                    } else if (attr.Value.hasOwnProperty('name')) {
+                                        actualValue = attr.Value.name;
+                                    }
+                                    // 2) AliasedValue.Value 里再包 EntityReference/对象
+                                    else if (attr.Value.hasOwnProperty('Value')) {
+                                        const innerVal = attr.Value.Value;
+                                        if (innerVal && typeof innerVal === 'object') {
+                                            if (innerVal.hasOwnProperty('Name')) {
+                                                actualValue = innerVal.Name;
+                                            } else if (innerVal.hasOwnProperty('name')) {
+                                                actualValue = innerVal.name;
+                                            } else if (innerVal.hasOwnProperty('Value')) {
+                                                actualValue = innerVal.Value;
+                                            } else {
+                                                actualValue = innerVal;
+                                            }
+                                        } else {
+                                            actualValue = innerVal;
+                                        }
+                                    }
                                 }
                                 flatEntity[mappedKey] = actualValue;
                             }
