@@ -123,12 +123,12 @@
                   @handle-current-change="handleCurrentChange" @handle-size-change2="handleSizeChange2"
                   @handle-current-change2="handleCurrentChange2"></language-config-table>
                 <!-- 多语言数据字段对应 -->
-                <multiple-language-contrast-table v-if="item.entityName === 'new_multiple_language_contrast'"
+                <multiple-language-contrast-table v-else-if="item.entityName === 'new_multiple_language_contrast'"
                   :tableData="filteredTableData" :tableHeight="tableHeight" :loading="loading" :envirLabel="envirLabel"
                   :tableKey="tableKey" :multipleSelection="multipleSelection"
                   @handle-selection-change="handleSelectionChange"></multiple-language-contrast-table>
                 <!-- 数据多语言 -->
-                <data-language-config-table v-if="item.entityName === 'new_data_languageconfig'"
+                <data-language-config-table v-else-if="item.entityName === 'new_data_languageconfig'"
                   :tableData="filteredTableData" :tableHeight="tableHeight" :loading="loading" :envirLabel="envirLabel"
                   :tableKey="tableKey" :multipleSelection="multipleSelection" :input="input" @form-loading="formLoading"
                   @form-loading-close="formLoadingClose" @add-message-tab="addMessageTab" @show-message="showMessage"
@@ -161,7 +161,6 @@ export default {
       }
     };
     return {
-      msg: "hello rektec",
       // 配置项
       tabs: [],
       nowTab: null, //当前选中的Tab
@@ -179,23 +178,20 @@ export default {
         createdonDR: [],
         tableFilter: "", // 表格过滤关键字
       },
-      tableData: {
-        ecFrom: [],
-        ecFromTotalRecord: 0,
-        ecTo: [],
-        ecToTotalRecord: 0,
-      }, //数据
+      // 优化：按 tab (entityName) 存储数据，确保每个 tab 的数据独立
+      tableDataByTab: {}, // 按 entityName 存储原始数据
+      filteredTableDataByTab: {}, // 按 entityName 存储过滤后的数据
       defaultTableHeight: "370", //表格高度
-      filteredTableData: {
-        ecFrom: [],
-        ecTo: [],
-      }, //过滤后的数据
       tableKey: 1, //刷新表格的Key
       multipleSelection: [], //表格选中
       loading: false, //是否加载数据中
       retrieveEntityName: "", //上次查询的实体名
       requestMessage: "", //执行接口后的日志
       envirLabel: [],//当前环境标签
+      // 优化：缓存 tableHeight 计算结果
+      cachedTableHeight: "",
+      // 优化：记录上次过滤文本，避免重复过滤
+      lastFilterText: "",
       // 表单校验规则
       rules: {
         // 创建、修改时间
@@ -221,8 +217,11 @@ export default {
     this.BaseDataInit();
 
     //初始化
-    this.$set(this, "nowTab", this.tabs[0]);
-    this.$set(this, "nowTabName", this.nowTab.entityName);
+    // 优化：添加空值检查，避免 tabs 为空时出错
+    if (this.tabs && this.tabs.length > 0) {
+      this.$set(this, "nowTab", this.tabs[0]);
+      this.$set(this, "nowTabName", this.nowTab.entityName);
+    }
 
     //#region 初始化-创建、修改时间区间
     let nowDT = new Date(this.rtcrm.formatDate(new Date(), "yyyy-MM-dd"));
@@ -242,6 +241,37 @@ export default {
   mounted() {
     //监听环境参数切换
     this.$on('environment-change', this.environmentChange);
+  },
+  watch: {
+    // 优化：监听 nowTabName 变化，确保数据结构存在
+    nowTabName: {
+      handler(newVal) {
+        if (newVal) {
+          // 确保当前 tab 的数据结构存在
+          if (!this.tableDataByTab[newVal]) {
+            this.$set(this.tableDataByTab, newVal, {
+              ecFrom: [],
+              ecFromTotalRecord: 0,
+              ecTo: [],
+              ecToTotalRecord: 0,
+            });
+          }
+          if (!this.filteredTableDataByTab[newVal]) {
+            this.$set(this.filteredTableDataByTab, newVal, {
+              ecFrom: [],
+              ecTo: [],
+            });
+          }
+        }
+      },
+      immediate: true,
+    },
+    // 优化：监听 isDesktop 变化，更新 tableHeight 缓存
+    isDesktop: {
+      handler() {
+        this.cachedTableHeight = "";
+      },
+    },
   },
   computed: {
     // 选中行格式化为Guid List
@@ -278,11 +308,49 @@ export default {
         ? this.jshelper.isDesktopEnvironment()
         : false;
     },
-    // Table高度
+    // Table高度 - 优化：使用缓存避免重复计算
     tableHeight() {
+      if (this.cachedTableHeight) {
+        return this.cachedTableHeight;
+      }
       let height = parseInt(this.defaultTableHeight);
-      if (this.isDesktop) return height + 95 + "px";
-      return height + "px";
+      const result = this.isDesktop ? height + 95 + "px" : height + "px";
+      this.cachedTableHeight = result;
+      return result;
+    },
+    // 获取当前 tab 的原始数据 - 优化：移除 computed 中的副作用
+    tableData() {
+      const entityName = this.nowTabName;
+      if (!entityName) {
+        return {
+          ecFrom: [],
+          ecFromTotalRecord: 0,
+          ecTo: [],
+          ecToTotalRecord: 0,
+        };
+      }
+      // 优化：不在 computed 中使用 $set，直接返回或返回空对象
+      return this.tableDataByTab[entityName] || {
+        ecFrom: [],
+        ecFromTotalRecord: 0,
+        ecTo: [],
+        ecToTotalRecord: 0,
+      };
+    },
+    // 获取当前 tab 的过滤后数据 - 优化：移除 computed 中的副作用
+    filteredTableData() {
+      const entityName = this.nowTabName;
+      if (!entityName) {
+        return {
+          ecFrom: [],
+          ecTo: [],
+        };
+      }
+      // 优化：不在 computed 中使用 $set，直接返回或返回空对象
+      return this.filteredTableDataByTab[entityName] || {
+        ecFrom: [],
+        ecTo: [],
+      };
     },
   },
   methods: {
@@ -299,15 +367,13 @@ export default {
     environmentChange: function (envir) {
       if (this.rtcrm.isNullOrWhiteSpace(envir)) return;
 
-      //清空数据
-      this.$set(this.tableData, "ecFrom", []);
-      this.$set(this.tableData, "ecFromTotalRecord", 0);
-      this.$set(this.tableData, "ecTo", []);
-      this.$set(this.tableData, "ecToTotalRecord", 0);
-      this.$set(this.filteredTableData, "ecFrom", []);
-      this.$set(this.filteredTableData, "ecTo", []);
+      //清空所有 tab 的数据
+      this.$set(this, "tableDataByTab", {});
+      this.$set(this, "filteredTableDataByTab", {});
       this.$set(this, "multipleSelection", []); //清空数据
       this.$set(this.input, "tableFilter", ""); //清空过滤条件
+      // 优化：清空过滤文本缓存
+      this.lastFilterText = "";
       this.$set(this, "tableKey", this.tableKey + 1); //刷新Table
 
       //重新获取环境参数
@@ -355,14 +421,17 @@ export default {
       this.$refs["form"].validate(async (valid, error) => {
         if (valid) {
           //#region 清空数据
+          const entityName = this.nowTab.entityName;
+          // 优化：数据结构初始化已由 watch 处理，这里不需要重复初始化
+          // 清空当前 tab 的数据
           if (this.rtcrm.isNullOrWhiteSpace(envir) || envir === "envirFrom") {
-            this.$set(this.tableData, "ecFrom", []);
-            this.$set(this.tableData, "ecFromTotalRecord", 0);
+            this.$set(this.tableDataByTab[entityName], "ecFrom", []);
+            this.$set(this.tableDataByTab[entityName], "ecFromTotalRecord", 0);
           }
           if (this.rtcrm.isNullOrWhiteSpace(envir) || envir === "envirTo") {
-            this.$set(this.tableData, "ecTo", []);
-            this.$set(this.tableData, "ecToTotalRecord", 0);
-          } //清空数据
+            this.$set(this.tableDataByTab[entityName], "ecTo", []);
+            this.$set(this.tableDataByTab[entityName], "ecToTotalRecord", 0);
+          }
           this.$set(this, "multipleSelection", []); //清空数据
           this.$set(this, "tableKey", this.tableKey + 1); //刷新Table
           //#endregion
@@ -424,7 +493,7 @@ export default {
 
           //#region 查询数据
           this.$set(this, "loading", true);
-          console.log(input);
+          // 优化：移除生产代码中的 console.log
           this.jshelper
             .invokeHiddenApiAsync("new_hbxn_common", route, JSON.stringify(input))
             .then((res) => {
@@ -438,27 +507,30 @@ export default {
               }
               if (res.isSuccess) {
                 let data = res.data;
+                const entityName = _this.nowTab.entityName;
+                // 优化：数据结构初始化已由 watch 处理，这里不需要重复初始化
+                // 优化：将数据存储到当前 tab 的 key 下
                 if (Array.isArray(data.ecFrom) && Array.isArray(data.ecTo)) {
                   if (this.rtcrm.isNullOrWhiteSpace(envir) || envir === "envirFrom")
-                    _this.$set(_this.tableData, "ecFrom", data.ecFrom);
+                    _this.$set(_this.tableDataByTab[entityName], "ecFrom", data.ecFrom);
                   if (this.rtcrm.isNullOrWhiteSpace(envir) || envir === "envirTo")
-                    _this.$set(_this.tableData, "ecTo", data.ecTo);
+                    _this.$set(_this.tableDataByTab[entityName], "ecTo", data.ecTo);
                 } else {
                   if (
                     this.rtcrm.isNullOrWhiteSpace(envir) ||
                     envir === "envirFrom"
                   ) {
-                    _this.$set(_this.tableData, "ecFrom", data.ecFrom.data);
+                    _this.$set(_this.tableDataByTab[entityName], "ecFrom", data.ecFrom.data);
                     _this.$set(
-                      _this.tableData,
+                      _this.tableDataByTab[entityName],
                       "ecFromTotalRecord",
                       data.ecFrom.TotalRecordCount
                     );
                   }
                   if (this.rtcrm.isNullOrWhiteSpace(envir) || envir === "envirTo") {
-                    _this.$set(_this.tableData, "ecTo", data.ecTo.data);
+                    _this.$set(_this.tableDataByTab[entityName], "ecTo", data.ecTo.data);
                     _this.$set(
-                      _this.tableData,
+                      _this.tableDataByTab[entityName],
                       "ecToTotalRecord",
                       data.ecTo.TotalRecordCount
                     );
@@ -560,12 +632,19 @@ export default {
     //Tab Click事件
     handleTabClick: function (tab, event) {
       if (this.rtcrm.isNull(tab)) return;
-      var entityName = this.tabs[tab.index].entityName;
+      // 优化：切换 tab 时，加载对应 tab 的数据，确保数据独立
+      const newEntityName = this.tabs[tab.index].entityName;
       this.$set(this, "nowTab", this.tabs[tab.index]);
-      this.$set(this, "nowTabName", this.nowTab.entityName);
-      this.$set(this, "multipleSelection", []); //清空数据
-      this.$set(this.input, "tableFilter", ""); //清空过滤条件
-      this.$set(this, "tableKey", this.tableKey + 1); //刷新Table
+      this.$set(this, "nowTabName", newEntityName);
+      // 重置过滤文本缓存，确保切换 tab 后可以正确过滤
+      this.lastFilterText = "";
+      // 优化：使用 $nextTick 确保 watch 执行完成后再调用 filterTableData
+      this.$nextTick(() => {
+        // 应用当前 tab 的过滤条件
+        this.filterTableData();
+        this.$set(this, "multipleSelection", []); //清空选中
+        this.$set(this, "tableKey", this.tableKey + 1); //刷新Table
+      });
     },
 
     //获取环境的Label
@@ -608,8 +687,13 @@ export default {
 
     //各配置项同步提示
     getTipsFromConfig(entityName) {
+      // 优化：添加空值检查，避免 GetTabLabel 返回 undefined 时出错
+      const tabLabel = this.GetTabLabel(entityName);
+      if (!tabLabel || !tabLabel.label) {
+        return "";
+      }
       let tips =
-        "同步" + this.GetTabLabel(entityName).label + "，请注意以下事项：<br>";
+        "同步" + tabLabel.label + "，请注意以下事项：<br>";
       switch (entityName) {
         case "new_systemparameter":
           tips +=
@@ -649,14 +733,9 @@ export default {
 
     //增加MessageTab
     addMessageTab: function (message) {
-      let messageTab = null;
+      // 优化：使用 find 直接返回结果，简化逻辑
       this.$set(this, "requestMessage", message);
-      this.tabs.find((item) => {
-        if (item.entityName === "requestMessage") {
-          messageTab = item;
-          return;
-        }
-      });
+      const messageTab = this.tabs.find(item => item.entityName === "requestMessage");
       if (this.rtcrm.isNull(messageTab)) {
         this.tabs.push({
           label: "处理结果",
@@ -669,14 +748,11 @@ export default {
 
     //移除Tab
     tabRemove: function (targetName) {
-      let index = 0;
-      this.tabs.find((item) => {
-        if (item.entityName === targetName) {
-          this.tabs.splice(index, 1);
-          return;
-        }
-        ++index;
-      });
+      // 优化：使用 findIndex 替代 find + 手动索引，代码更简洁高效
+      const index = this.tabs.findIndex(item => item.entityName === targetName);
+      if (index !== -1) {
+        this.tabs.splice(index, 1);
+      }
     },
 
     //分页变更-envirFrom
@@ -720,29 +796,74 @@ export default {
 
     //过滤表格数据
     filterTableData: function () {
-      const filterText = this.input.tableFilter.toLowerCase();
+      // 优化：使用当前 tab 的数据进行过滤，确保每个 tab 的数据独立
+      const entityName = this.nowTabName;
+      if (!entityName) return;
+
+      // 优化：确保数据结构存在（watch 可能还未执行，需要同步检查）
+      if (!this.tableDataByTab[entityName]) {
+        this.$set(this.tableDataByTab, entityName, {
+          ecFrom: [],
+          ecFromTotalRecord: 0,
+          ecTo: [],
+          ecToTotalRecord: 0,
+        });
+      }
+      if (!this.filteredTableDataByTab[entityName]) {
+        this.$set(this.filteredTableDataByTab, entityName, {
+          ecFrom: [],
+          ecTo: [],
+        });
+      }
+
+      const currentTableData = this.tableDataByTab[entityName];
+      const filterText = this.input.tableFilter ? this.input.tableFilter.toLowerCase() : "";
+      const currentFiltered = this.filteredTableDataByTab[entityName];
+
+      // 优化：如果过滤文本没有变化，且已有过滤结果，则不需要重新过滤
+      if (filterText === this.lastFilterText && currentFiltered && currentFiltered.ecFrom && currentFiltered.ecFrom.length > 0) {
+        return;
+      }
+      this.lastFilterText = filterText;
+
+      let needUpdate = false;
+      let newFilteredEcFrom = [];
+      let newFilteredEcTo = [];
 
       if (this.rtcrm.isNullOrWhiteSpace(filterText)) {
         // 如果没有过滤条件，显示所有数据
-        this.$set(this.filteredTableData, "ecFrom", this.tableData.ecFrom);
-        this.$set(this.filteredTableData, "ecTo", this.tableData.ecTo);
+        newFilteredEcFrom = currentTableData.ecFrom || [];
+        newFilteredEcTo = currentTableData.ecTo || [];
       } else {
         // 过滤ecFrom数据
-        const filteredEcFrom = this.tableData.ecFrom.filter(item => {
+        newFilteredEcFrom = (currentTableData.ecFrom || []).filter(item => {
           return this.matchFilter(item, filterText);
         });
 
         // 过滤ecTo数据
-        const filteredEcTo = this.tableData.ecTo.filter(item => {
+        newFilteredEcTo = (currentTableData.ecTo || []).filter(item => {
           return this.matchFilter(item, filterText);
         });
-
-        this.$set(this.filteredTableData, "ecFrom", filteredEcFrom);
-        this.$set(this.filteredTableData, "ecTo", filteredEcTo);
       }
 
-      // 刷新表格
-      this.$set(this, "tableKey", this.tableKey + 1);
+      // 优化：只在数据真正变化时更新
+      if (currentFiltered && currentFiltered.ecFrom && currentFiltered.ecTo) {
+        if (currentFiltered.ecFrom.length !== newFilteredEcFrom.length ||
+          currentFiltered.ecTo.length !== newFilteredEcTo.length ||
+          currentFiltered.ecFrom !== newFilteredEcFrom ||
+          currentFiltered.ecTo !== newFilteredEcTo) {
+          needUpdate = true;
+        }
+      } else {
+        needUpdate = true;
+      }
+
+      if (needUpdate) {
+        this.$set(this.filteredTableDataByTab[entityName], "ecFrom", newFilteredEcFrom);
+        this.$set(this.filteredTableDataByTab[entityName], "ecTo", newFilteredEcTo);
+        // 优化：只在数据真正变化时更新 tableKey
+        this.$set(this, "tableKey", this.tableKey + 1);
+      }
     },
 
     //匹配过滤条件
@@ -798,8 +919,9 @@ export default {
 
     //字符串匹配
     matchString: function (value, filterText) {
+      // 优化：使用 includes 替代 indexOf !== -1，代码更简洁
       if (this.rtcrm.isNullOrWhiteSpace(value)) return false;
-      return value.toLowerCase().indexOf(filterText) !== -1;
+      return value.toLowerCase().includes(filterText);
     }
   },
 };
