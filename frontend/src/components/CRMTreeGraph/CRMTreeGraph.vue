@@ -92,16 +92,13 @@ export default {
     name: 'CRMTreeGraph',
     data() {
         return {
-            msg: "hello world",
             // 环境
             environments: [{ label: "无效环境请刷新", key: "undefined" }],
             // 输入
             input: {
                 envirFrom: "dev",
                 entityName: "businessunit",
-                search: "",
             },
-            nowTabName: "",
             tableData: {
                 ecFrom: [],
                 ecFromCopy: [],
@@ -145,29 +142,21 @@ export default {
     computed: {
         //可选的树结构实体
         entityListForTree: function () {
-            let entList = [];
-            if (this.rtcrm.isNull(this.myBaseData) || this.myBaseData.length === 0) return entList;
+            // 优化：使用 map 替代 for...of 循环，代码更简洁
+            if (this.rtcrm.isNull(this.myBaseData) || this.myBaseData.length === 0) return [];
 
-            for (let item of this.myBaseData) {
-                entList.push({
-                    label: item.displayName,
-                    key: item.logicalName,
-                });
-            }
-
-            return entList;
+            return this.myBaseData.map(item => ({
+                label: item.displayName,
+                key: item.logicalName,
+            }));
         },
 
         //当前实体的配置
         currentEntData: function () {
-            let data = {};
-            if (this.rtcrm.isNull(this.myBaseData) || this.myBaseData.length === 0) return data;
+            // 优化：使用 find 替代 for...of 循环，代码更简洁
+            if (this.rtcrm.isNull(this.myBaseData) || this.myBaseData.length === 0) return {};
 
-            for (let item of this.myBaseData) {
-                if (item.logicalName === this.input.entityName) return item;
-            }
-
-            return data;
+            return this.myBaseData.find(item => item.logicalName === this.input.entityName) || {};
         },
 
         //计算树形图的宽度
@@ -192,7 +181,7 @@ export default {
         },
     },
     watch: {
-        // 监听 message 属性
+        // 监听 loading 属性
         loading(newVal, oldVal) {
             if (newVal === true && this.$refs.dataContainer) {
                 this.$nextTick(() => {
@@ -218,12 +207,13 @@ export default {
                 this.$set(this, "BaseData", null);
             }
 
+            // 优化：使用 Object.prototype.hasOwnProperty.call 替代直接使用 hasOwnProperty，更安全
             if (this.rtcrm.isNull(this.BaseData))
                 this.$set(this, "myBaseData", []);
-            else if (!this.BaseData.hasOwnProperty(this.$globalVar["selectEnv"]))
+            else if (!Object.prototype.hasOwnProperty.call(this.BaseData, this.$globalVar["selectEnv"]))
                 this.$set(this, "myBaseData", []);
             else
-                this.$set(this, "myBaseData", this.BaseData[this.$globalVar["selectEnv"]]);;
+                this.$set(this, "myBaseData", this.BaseData[this.$globalVar["selectEnv"]]);
 
             //计算当前详情表单的行列数
             this.getDetailTableSize();
@@ -240,7 +230,6 @@ export default {
             this.$set(this.tableData, "ecFromTotalRecord", 0);
             this.$set(this, "input", {
                 envirFrom: "dev",
-                search: "",
             });
             this.$set(this.tableData, "selectTreeNode", {});
             this.$set(this.tableData, "selectTreeNodeForm", []);
@@ -287,7 +276,7 @@ export default {
         },
 
         //查询
-        getData: function (envir) {
+        getData: function () {
             let _this = this;
             this.$refs["form"].validate(async (valid, error) => {
                 if (valid) {
@@ -297,7 +286,6 @@ export default {
                     this.$set(this.tableData, "selectTreeNode", {});
                     this.$set(this.tableData, "treeData", []);
                     this.$set(this.tableData, "ecFromTotalRecord", 0);
-                    this.$set(this.input, "search", "");
                     this.$set(this, "tableKey", this.tableKey + 1); //刷新Table
                     //#endregion
 
@@ -308,7 +296,7 @@ export default {
                         entityName: this.input.entityName,
                         customFields: this.currentEntData.customFields,
                     };
-                    console.log("inputParam", inputParam);
+                    // 优化：移除生产代码中的 console.log
                     this.jshelper
                         .invokeHiddenApiAsync("new_hbxn_common", "RetrieveCRMData/RetrieveCRMData", inputParam)
                         .then((res) => {
@@ -336,15 +324,6 @@ export default {
                     //#endregion
                 }
             });
-        },
-
-        //获取环境的Label
-        GetEnvirLabel: function (val) {
-            let obj = { label: "无效环境请刷新", key: "undefined" };
-            let _obj = this.environments.find((item) => {
-                return item.key === val;
-            });
-            return !this.rtcrm.isNull(_obj) ? _obj : obj;
         },
 
         //envirFrom下拉Change事件
@@ -375,16 +354,45 @@ export default {
 
         //复制到剪贴板
         copyToClipboard(val) {
-            var textarea = document.createElement('textarea');
+            // 优化：使用现代 Clipboard API，替代已废弃的 document.execCommand
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                // 使用现代 Clipboard API
+                navigator.clipboard.writeText(val)
+                    .then(() => {
+                        this.showMessage("复制成功", "success");
+                    })
+                    .catch((err) => {
+                        console.error("复制失败:", err);
+                        // 降级到传统方法
+                        this.fallbackCopyToClipboard(val);
+                    });
+            } else {
+                // 降级到传统方法（兼容旧浏览器）
+                this.fallbackCopyToClipboard(val);
+            }
+        },
+
+        // 降级复制方法（兼容旧浏览器）
+        fallbackCopyToClipboard(val) {
+            const textarea = document.createElement('textarea');
             textarea.style.position = 'fixed';
-            textarea.style.opacity = 0;
+            textarea.style.opacity = '0';
             textarea.value = val;
             document.body.appendChild(textarea);
             textarea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textarea);
-
-            this.showMessage("复制成功", "success");
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    this.showMessage("复制成功", "success");
+                } else {
+                    this.showMessage("复制失败，请手动复制", "error");
+                }
+            } catch (err) {
+                console.error("复制失败:", err);
+                this.showMessage("复制失败，请手动复制", "error");
+            } finally {
+                document.body.removeChild(textarea);
+            }
         },
 
         //树形图节点点击
@@ -393,11 +401,12 @@ export default {
         },
 
         //处理为树形结构数据
-        handleTreeData: function (data, config = {}, rootParentId = null) {
+        handleTreeData: function (data, config = {}) {
             this.$set(this.tableData, "treeData", []);
             if (this.rtcrm.isNull(data) || data.length === 0) return;
+            // 优化：使用 Object.prototype.hasOwnProperty.call 替代直接使用 hasOwnProperty，更安全
             let isLookupParentField = typeof (data[0][this.currentEntData.parentField]) === "object" &&
-                data[0][this.currentEntData.parentField].hasOwnProperty("Id");
+                Object.prototype.hasOwnProperty.call(data[0][this.currentEntData.parentField], "Id");
 
             //#region 处理为树形结构数据
             const {
@@ -465,11 +474,12 @@ export default {
 
         //获取指定行列的Item
         getCustomFieldItem: function (row, col) {
-            let index = row * this.detailTableConfig.columnCount + col;
-            if (this.rtcrm.isNull(this.currentEntData) || this.rtcrm.isNull(this.currentEntData.customFields)) return null;
-            else if (this.currentEntData.customFields.length < index) return null;
-
-            return this.currentEntData.customFields[index];
+            // 优化：简化条件判断逻辑
+            if (this.rtcrm.isNull(this.currentEntData) || this.rtcrm.isNull(this.currentEntData.customFields)) {
+                return null;
+            }
+            const index = row * this.detailTableConfig.columnCount + col;
+            return index < this.currentEntData.customFields.length ? this.currentEntData.customFields[index] : null;
         },
 
         //计算当前详情表单的行列数
@@ -479,27 +489,20 @@ export default {
             let _rowCountArray = [];
             if (this.rtcrm.isNull(this.currentEntData) || this.rtcrm.isNull(this.currentEntData.customFields)) _rowCount = 0;
             else _rowCount = parseInt(this.currentEntData.customFields.length / this.detailTableConfig.columnCount);
-            _rowCountArray = Array.from({ length: this.currentEntData.customFields.length % 2 === 0 ? _rowCount : _rowCount + 1 }, (_, i) => i);
+            // 优化：修复计算错误，使用 columnCount 而不是硬编码的 2
+            const remainder = this.currentEntData.customFields.length % this.detailTableConfig.columnCount;
+            _rowCountArray = Array.from({ length: remainder === 0 ? _rowCount : _rowCount + 1 }, (_, i) => i);
             this.$set(this.detailTableConfig, "rowCountArray", _rowCountArray);
 
             let _columnCountArray = Array.from({ length: this.detailTableConfig.columnCount }, (_, i) => i);
             this.$set(this.detailTableConfig, "columnCountArray", _columnCountArray);
 
-            let selectTreeNodeForm = [];
-            for (let rowInd of _rowCountArray) {
-                let row = [];
-                for (let colInd of _columnCountArray) {
-                    let col = {};
-                    let item = this.getCustomFieldItem(rowInd, colInd);
-                    if (!this.rtcrm.isNull(item)) {
-                        col = {
-                            ...item,
-                        }
-                        row.push(col);
-                    }
-                }
-                selectTreeNodeForm.push(row);
-            }
+            // 优化：使用 map 和 filter 替代 for...of 循环，代码更简洁
+            const selectTreeNodeForm = _rowCountArray.map(rowInd => {
+                return _columnCountArray
+                    .map(colInd => this.getCustomFieldItem(rowInd, colInd))
+                    .filter(item => !this.rtcrm.isNull(item));
+            });
             this.$set(this.tableData, "selectTreeNodeForm", selectTreeNodeForm);
         },
     },

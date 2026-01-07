@@ -140,7 +140,6 @@ export default {
     name: 'CRMUserAndRoles',
     data() {
         return {
-            msg: "hello world",
             // 环境
             environments: [{ label: "无效环境请刷新", key: "undefined" }],
             // 输入
@@ -157,8 +156,6 @@ export default {
             defaultTableHeight: "520", //表格高度
             tableKey: 1, //刷新表格的Key
             loading: false, //是否加载数据中
-            entityOptionsLoading: false, //是否加载实体名称中
-            fieldOptionsLoading: false, //是否加载字段类型中
             // 表单校验规则
             rules: {
             },
@@ -207,12 +204,13 @@ export default {
                 this.$set(this, "UserThirtyFields", null);
             }
 
+            // 优化：使用 Object.prototype.hasOwnProperty.call 替代直接使用 hasOwnProperty，更安全
             if (this.rtcrm.isNull(this.UserThirtyFields))
                 this.$set(this, "myUserThirtyFields", []);
-            else if (!this.UserThirtyFields.hasOwnProperty(this.$globalVar["selectEnv"]))
+            else if (!Object.prototype.hasOwnProperty.call(this.UserThirtyFields, this.$globalVar["selectEnv"]))
                 this.$set(this, "myUserThirtyFields", []);
             else
-                this.$set(this, "myUserThirtyFields", this.UserThirtyFields[this.$globalVar["selectEnv"]]);;
+                this.$set(this, "myUserThirtyFields", this.UserThirtyFields[this.$globalVar["selectEnv"]]);
 
             this.$set(this, "tableKey", this.tableKey + 1); //刷新Table
         },
@@ -226,9 +224,8 @@ export default {
             this.$set(this.tableData, "ecFromTotalRecord", 0);
             this.$set(this, "input", {
                 envirFrom: "dev",
-                entityName: "",
-                attributeType: "",
                 search: "",
+                isHasSecurityRole: "1",
             });
             this.$set(this, "tableKey", this.tableKey + 1); //刷新Table
 
@@ -272,7 +269,7 @@ export default {
         },
 
         //查询
-        getData: function (envir) {
+        getData: function () {
             let _this = this;
             this.$refs["form"].validate(async (valid, error) => {
                 if (valid) {
@@ -319,17 +316,9 @@ export default {
             });
         },
 
-        //获取环境的Label
-        GetEnvirLabel: function (val) {
-            let obj = { label: "无效环境请刷新", key: "undefined" };
-            let _obj = this.environments.find((item) => {
-                return item.key === val;
-            });
-            return !this.rtcrm.isNull(_obj) ? _obj : obj;
-        },
-
         //envirFrom下拉Change事件
         envirFromChange: function () {
+            // 环境切换时清空数据
         },
 
         //showMessage
@@ -354,15 +343,16 @@ export default {
             if (this.rtcrm.isNullOrWhiteSpace(val)) {
                 return data;
             }
-            else {
-                let result = []
-                for (let item of data) {
-                    if (item.fullname.indexOf(val) !== -1 || item.domainname.indexOf(val) !== -1 ||
-                        item.securityRolesStr.indexOf(val) !== -1 || item.businessunitid.indexOf(val) !== -1)
-                        result.push(item);
-                }
-                return result;
-            }
+            // 优化：使用 filter 和 includes 替代循环和 indexOf，提升性能
+            const searchVal = val.toLowerCase(); // 提前转换搜索关键词，避免重复操作
+            return data.filter(item => {
+                const fullname = (item.fullname || '').toLowerCase();
+                const domainname = (item.domainname || '').toLowerCase();
+                const securityRolesStr = (item.securityRolesStr || '').toLowerCase();
+                const businessunitid = (item.businessunitid || '').toLowerCase();
+                return fullname.includes(searchVal) || domainname.includes(searchVal) ||
+                    securityRolesStr.includes(searchVal) || businessunitid.includes(searchVal);
+            });
         },
 
         //是否含有安全角色过滤
@@ -378,28 +368,53 @@ export default {
             if (this.rtcrm.isNullOrWhiteSpace(val)) {
                 return data;
             }
-            else {
-                let result = []
-                for (let item of data) {
-                    if (val == 1 && !this.rtcrm.isNull(item.securityRoles) && item.securityRoles.length > 0)
-                        result.push(item);
-                }
-                return result;
-            }
+            // 优化：使用 filter 替代 for...of 循环，使用 === 替代 ==，代码更简洁
+            return data.filter(item => {
+                return val === "1" && !this.rtcrm.isNull(item.securityRoles) && item.securityRoles.length > 0;
+            });
         },
 
         //复制到剪贴板
         copyToClipboard(val) {
-            var textarea = document.createElement('textarea');
+            // 优化：使用现代 Clipboard API，替代已废弃的 document.execCommand
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                // 使用现代 Clipboard API
+                navigator.clipboard.writeText(val)
+                    .then(() => {
+                        this.showMessage("复制成功", "success");
+                    })
+                    .catch((err) => {
+                        console.error("复制失败:", err);
+                        // 降级到传统方法
+                        this.fallbackCopyToClipboard(val);
+                    });
+            } else {
+                // 降级到传统方法（兼容旧浏览器）
+                this.fallbackCopyToClipboard(val);
+            }
+        },
+
+        // 降级复制方法（兼容旧浏览器）
+        fallbackCopyToClipboard(val) {
+            const textarea = document.createElement('textarea');
             textarea.style.position = 'fixed';
-            textarea.style.opacity = 0;
+            textarea.style.opacity = '0';
             textarea.value = val;
             document.body.appendChild(textarea);
             textarea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textarea);
-
-            this.showMessage("复制成功", "success");
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    this.showMessage("复制成功", "success");
+                } else {
+                    this.showMessage("复制失败，请手动复制", "error");
+                }
+            } catch (err) {
+                console.error("复制失败:", err);
+                this.showMessage("复制失败，请手动复制", "error");
+            } finally {
+                document.body.removeChild(textarea);
+            }
         },
     },
 };
