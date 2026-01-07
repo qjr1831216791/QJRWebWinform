@@ -109,7 +109,7 @@
                                             <!-- 创建时间 -->
                                             <el-table-column prop="createdOn" label="创建时间" show-overflow-tooltip>
                                                 <template slot-scope="scope">
-                                                    {{ rtcrm.formatDate(new Date(scope.row.createdon), "yyyy-MM-dd hh:mm:ss") }}
+                                                    {{ scope.row.createdonFormatted || scope.row.createdon }}
                                                 </template>
                                             </el-table-column>
                                         </el-table>
@@ -144,8 +144,8 @@
                                                 </div>
                                                 <div class="detail-item">
                                                     <label>执行时间：</label>
-                                                    <span>{{ rtcrm.formatDate(new Date(selectedRow.createdon),
-                                                        "yyyy-MM-dd hh:mm:ss") }}</span>
+                                                    <span>{{ selectedRow.createdonFormatted || selectedRow.createdon
+                                                    }}</span>
                                                 </div>
                                                 <div class="detail-item">
                                                     <label>执行时长：</label>
@@ -441,15 +441,6 @@ export default {
             });
         },
 
-        //获取环境的Label
-        GetEnvirLabel: function (val) {
-            let obj = { label: "无效环境请刷新", key: "undefined" };
-            let _obj = this.environments.find((item) => {
-                return item.key === val;
-            });
-            return !this.rtcrm.isNull(_obj) ? _obj : obj;
-        },
-
         //CRM实体数据转换工具方法 - 将Attributes数组转换为扁平对象
         transformCRMEntityData(entities) {
             if (!entities || !Array.isArray(entities)) {
@@ -474,6 +465,19 @@ export default {
                     entity.FormattedValues.forEach(fv => {
                         flatEntity[`${fv.Key}_Formatted`] = fv.Value;
                     });
+                }
+
+                // 优化：在数据转换时格式化日期字段，避免在模板中重复创建 Date 对象
+                if (flatEntity.createdon) {
+                    try {
+                        const date = new Date(flatEntity.createdon);
+                        if (!isNaN(date.getTime())) {
+                            flatEntity.createdonFormatted = this.rtcrm.formatDate(date, "yyyy-MM-dd hh:mm:ss");
+                        }
+                    } catch (error) {
+                        // 如果格式化失败，保持原值
+                        flatEntity.createdonFormatted = flatEntity.createdon;
+                    }
                 }
 
                 return flatEntity;
@@ -503,31 +507,60 @@ export default {
                 this.$set(this.tableData, "ecFrom", this.tableData.ecFromCopy);
             }
             else {
-                this.$set(this.tableData, "ecFrom", []);//置空再重新填充数据
-                for (let item of this.tableData.ecFromCopy) {
-                    if ((item.typename && item.typename.indexOf(val) !== -1) ||
-                        (item.messagename && item.messagename.indexOf(val) !== -1) ||
-                        (item.messageblock && item.messageblock.indexOf(val) !== -1) ||
-                        (item.primaryentity && item.primaryentity.indexOf(val) !== -1)) {
-                        this.tableData.ecFrom.push(item);
-                    }
-                }
+                // 优化：使用 filter 和 includes 替代循环和 indexOf，提升性能
+                const searchVal = val.toLowerCase(); // 提前转换搜索关键词，避免重复操作
+                const filteredData = this.tableData.ecFromCopy.filter(item => {
+                    return (item.typename && item.typename.toLowerCase().includes(searchVal)) ||
+                        (item.messagename && item.messagename.toLowerCase().includes(searchVal)) ||
+                        (item.messageblock && item.messageblock.toLowerCase().includes(searchVal)) ||
+                        (item.primaryentity && item.primaryentity.toLowerCase().includes(searchVal));
+                });
+                this.$set(this.tableData, "ecFrom", filteredData);
             }
             this.$set(this, "tableKey", this.tableKey + 1); //刷新Table
         },
 
         //复制到剪贴板
         copyToClipboard(val) {
-            var textarea = document.createElement('textarea');
+            // 优化：使用现代 Clipboard API，替代已废弃的 document.execCommand
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                // 使用现代 Clipboard API
+                navigator.clipboard.writeText(val)
+                    .then(() => {
+                        this.showMessage("复制成功", "success");
+                    })
+                    .catch((err) => {
+                        console.error("复制失败:", err);
+                        // 降级到传统方法
+                        this.fallbackCopyToClipboard(val);
+                    });
+            } else {
+                // 降级到传统方法（兼容旧浏览器）
+                this.fallbackCopyToClipboard(val);
+            }
+        },
+
+        // 降级复制方法（兼容旧浏览器）
+        fallbackCopyToClipboard(val) {
+            const textarea = document.createElement('textarea');
             textarea.style.position = 'fixed';
-            textarea.style.opacity = 0;
+            textarea.style.opacity = '0';
             textarea.value = val;
             document.body.appendChild(textarea);
             textarea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textarea);
-
-            this.showMessage("复制成功", "success");
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    this.showMessage("复制成功", "success");
+                } else {
+                    this.showMessage("复制失败，请手动复制", "error");
+                }
+            } catch (err) {
+                console.error("复制失败:", err);
+                this.showMessage("复制失败，请手动复制", "error");
+            } finally {
+                document.body.removeChild(textarea);
+            }
         },
 
         copyTypeNameToClipboard(val) {
@@ -587,10 +620,10 @@ export default {
                 pluginNameList.push(this.input.pluginName2);
             }
             if (!this.rtcrm.isNull(pluginNameList) && pluginNameList.length > 0) {
-                let pluginNameFilter = "";
-                for (let i of pluginNameList) {
-                    pluginNameFilter += `<condition attribute="typename" operator="like" value="${i}%" />`;
-                }
+                // 优化：使用数组 map 和 join 替代循环和字符串拼接，代码更简洁
+                const pluginNameFilter = pluginNameList
+                    .map(name => `<condition attribute="typename" operator="like" value="${name}%" />`)
+                    .join('');
                 filters.push(`<filter type="or">${pluginNameFilter}</filter>`);
             }
 
