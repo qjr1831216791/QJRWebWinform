@@ -122,12 +122,16 @@ namespace APIService
                     prvInitDate = DateTime.Now;
                 }
             }
-            catch (CryptographicException)
+            catch (CryptographicException ex)
             {
+                Log.ErrorMsg("OrganizationService Initialize");
+                Log.LogException(ex);
                 throw;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Log.ErrorMsg("OrganizationService Initialize");
+                Log.LogException(ex);
                 throw;
             }
         }
@@ -186,10 +190,14 @@ namespace APIService
             }
             catch (CryptographicException ex)
             {
+                Log.ErrorMsg("CreateCrmServicMulti");
+                Log.LogException(ex);
                 throw ex;
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("CreateCrmServicMulti");
+                Log.LogException(ex);
                 throw ex;
             }
         }
@@ -231,10 +239,14 @@ namespace APIService
             }
             catch (CryptographicException ex)
             {
+                Log.ErrorMsg("CreateCrmServic");
+                Log.LogException(ex);
                 throw ex;
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("CreateCrmServic");
+                Log.LogException(ex);
                 throw ex;
             }
         }

@@ -186,10 +186,10 @@ function waitForNativeHostIfNeeded() {
     // 否则创建一个简单的等待逻辑（兼容性处理）
     return new Promise((resolve) => {
         // 如果已经就绪，立即返回
-        if (window.__nativeHostReady || 
-            (typeof window.nativeHost !== 'undefined' && 
-             window.nativeHost && 
-             typeof window.nativeHost.executeCommand === 'function')) {
+        if (window.__nativeHostReady ||
+            (typeof window.nativeHost !== 'undefined' &&
+                window.nativeHost &&
+                typeof window.nativeHost.executeCommand === 'function')) {
             resolve();
             return;
         }
@@ -206,7 +206,7 @@ function waitForNativeHostIfNeeded() {
         window.addEventListener('nativeHostReady', onReady);
         if (typeof window.nativeHostReady === 'function') {
             const originalReady = window.nativeHostReady;
-            window.nativeHostReady = function() {
+            window.nativeHostReady = function () {
                 originalReady();
                 onReady();
             };
@@ -217,10 +217,10 @@ function waitForNativeHostIfNeeded() {
         const maxAttempts = 150;
         const checkNativeHost = () => {
             attempts++;
-            if (window.__nativeHostReady || 
-                (typeof window.nativeHost !== 'undefined' && 
-                 window.nativeHost && 
-                 typeof window.nativeHost.executeCommand === 'function')) {
+            if (window.__nativeHostReady ||
+                (typeof window.nativeHost !== 'undefined' &&
+                    window.nativeHost &&
+                    typeof window.nativeHost.executeCommand === 'function')) {
                 onReady();
             } else if (attempts < maxAttempts) {
                 setTimeout(checkNativeHost, 100);
@@ -274,10 +274,26 @@ JsCrm.webApi = {
                 headers: customHeaders,
             }).then((response) => {
                 resolve(response.data)
-            }, (response) => {
-                reject(response);
             }).catch(error => {
-                throw error;
+                // 处理各种错误情况
+                if (error.response) {
+                    // HTTP 错误响应（4xx, 5xx）
+                    // 优先使用 response.data，如果没有则使用 response.statusText
+                    const errorData = error.response.data || error.response.statusText || '请求失败';
+                    reject(errorData);
+                } else if (error.request) {
+                    // 请求已发出但没有收到响应（网络错误）
+                    reject({
+                        message: '网络错误，无法连接到服务器',
+                        error: error.message || 'Network Error'
+                    });
+                } else {
+                    // 其他错误（配置错误等）
+                    reject({
+                        message: error.message || '请求配置错误',
+                        error: error
+                    });
+                }
             })
         })
     },
@@ -320,12 +336,41 @@ JsCrm.webApi = {
                 headers: customHeaders,
             }).then((resp) => {
                 resolve(resp.data)
-            }, (resp) => {
-                reject(resp.response.data);
             }).catch(error => {
-                throw error;
+                // 处理各种错误情况
+                if (error.response) {
+                    // HTTP 错误响应（4xx, 5xx）
+                    // 优先使用 response.data，如果没有则使用 response.statusText
+                    const errorData = error.response.data || error.response.statusText || '请求失败';
+                    reject(errorData);
+                } else if (error.request) {
+                    // 请求已发出但没有收到响应（网络错误）
+                    reject({
+                        message: '网络错误，无法连接到服务器',
+                        error: error.message || 'Network Error'
+                    });
+                } else {
+                    // 其他错误（配置错误等）
+                    reject({
+                        message: error.message || '请求配置错误',
+                        error: error
+                    });
+                }
             })
         })
+    },
+
+    /**
+     * 检查 NativeHost 是否真的可用（不仅仅是存在，还要能正常调用）
+     * @returns {boolean} true 表示 NativeHost 可用，false 表示不可用
+     */
+    _isNativeHostReady: function () {
+        if (typeof window === 'undefined') {
+            return false;
+        }
+        // 检查 NativeHost 对象是否存在且具有必要的方法
+        return window.nativeHost &&
+            typeof window.nativeHost.executeCommand === 'function';
     },
 
     /**
@@ -489,158 +534,158 @@ JsCrm.webApi = {
                     return;
                 }
 
-            // 准备参数的辅助函数（提取为公共逻辑）
-            const prepareParameters = () => {
-                let parametersJson = null;
-                if (actionPara !== null && actionPara !== undefined) {
-                    let paramObj = null;
+                // 准备参数的辅助函数（提取为公共逻辑）
+                const prepareParameters = () => {
+                    let parametersJson = null;
+                    if (actionPara !== null && actionPara !== undefined) {
+                        let paramObj = null;
 
-                    if (typeof actionPara === 'string') {
-                        // 如果是字符串，尝试解析为 JSON
-                        try {
-                            paramObj = JSON.parse(actionPara);
-                        } catch (e) {
-                            // 如果不是有效的 JSON，直接使用原字符串
-                            parametersJson = actionPara;
+                        if (typeof actionPara === 'string') {
+                            // 如果是字符串，尝试解析为 JSON
+                            try {
+                                paramObj = JSON.parse(actionPara);
+                            } catch (e) {
+                                // 如果不是有效的 JSON，直接使用原字符串
+                                parametersJson = actionPara;
+                            }
+                        } else {
+                            // 如果是对象，直接使用
+                            paramObj = actionPara;
+                        }
+
+                        // 如果成功解析为对象，添加 CrmEnv
+                        if (paramObj !== null && typeof paramObj === 'object') {
+                            // 检查是否已有 crmEnv 相关字段，如果没有则添加
+                            if (!paramObj.hasOwnProperty('crmEnv') &&
+                                !paramObj.hasOwnProperty('CrmEnv') &&
+                                !paramObj.hasOwnProperty('crmenv')) {
+                                // 从全局变量获取 CrmEnv（与 ApiPost 保持一致）
+                                if (context.$globalVar && context && context.$globalVar.selectEnv) {
+                                    paramObj.crmEnv = context.$globalVar.selectEnv;
+                                }
+                            }
+                            parametersJson = JSON.stringify(paramObj);
                         }
                     } else {
-                        // 如果是对象，直接使用
-                        paramObj = actionPara;
-                    }
-
-                    // 如果成功解析为对象，添加 CrmEnv
-                    if (paramObj !== null && typeof paramObj === 'object') {
-                        // 检查是否已有 crmEnv 相关字段，如果没有则添加
-                        if (!paramObj.hasOwnProperty('crmEnv') &&
-                            !paramObj.hasOwnProperty('CrmEnv') &&
-                            !paramObj.hasOwnProperty('crmenv')) {
-                            // 从全局变量获取 CrmEnv（与 ApiPost 保持一致）
-                            if (context.$globalVar && context && context.$globalVar.selectEnv) {
-                                paramObj.crmEnv = context.$globalVar.selectEnv;
-                            }
+                        // 如果 actionPara 为空，但存在 CrmEnv，创建一个包含 CrmEnv 的参数对象
+                        if (context.$globalVar && context && context.$globalVar.selectEnv) {
+                            parametersJson = JSON.stringify({ crmEnv: context.$globalVar.selectEnv });
                         }
-                        parametersJson = JSON.stringify(paramObj);
                     }
-                } else {
-                    // 如果 actionPara 为空，但存在 CrmEnv，创建一个包含 CrmEnv 的参数对象
-                    if (context.$globalVar && context && context.$globalVar.selectEnv) {
-                        parametersJson = JSON.stringify({ crmEnv: context.$globalVar.selectEnv });
+                    return parametersJson;
+                };
+
+                // 处理返回结果的辅助函数（提取为公共逻辑）
+                const processResult = (result) => {
+                    // 转换返回格式，使其与 WebAPI 格式完全一致
+                    // WebAPI 返回格式: { isSuccess: true, data: {...}, message: '...', code: 1 }
+                    // NativeHost 返回格式: { success: true, data: ResultModel | any }
+                    // 如果 result.data 本身已经是 ResultModel 格式（包含 isSuccess 字段），则直接返回
+                    // 否则，将其包装为 ResultModel 格式
+                    if (result.data && typeof result.data === 'object' && result.data.hasOwnProperty('isSuccess')) {
+                        // result.data 已经是 ResultModel 格式，直接返回
+                        return result.data;
+                    } else {
+                        // result.data 不是 ResultModel 格式，需要包装
+                        return {
+                            isSuccess: true,
+                            data: result.data,
+                            message: result.message || '调用成功',
+                            code: result.code !== undefined ? result.code : 1
+                        };
                     }
-                }
-                return parametersJson;
-            };
+                };
 
-            // 处理返回结果的辅助函数（提取为公共逻辑）
-            const processResult = (result) => {
-                // 转换返回格式，使其与 WebAPI 格式完全一致
-                // WebAPI 返回格式: { isSuccess: true, data: {...}, message: '...', code: 1 }
-                // NativeHost 返回格式: { success: true, data: ResultModel | any }
-                // 如果 result.data 本身已经是 ResultModel 格式（包含 isSuccess 字段），则直接返回
-                // 否则，将其包装为 ResultModel 格式
-                if (result.data && typeof result.data === 'object' && result.data.hasOwnProperty('isSuccess')) {
-                    // result.data 已经是 ResultModel 格式，直接返回
-                    return result.data;
-                } else {
-                    // result.data 不是 ResultModel 格式，需要包装
-                    return {
-                        isSuccess: true,
-                        data: result.data,
-                        message: result.message || '调用成功',
-                        code: result.code !== undefined ? result.code : 1
-                    };
-                }
-            };
-
-            // 优先使用异步 API（如果支持）
-            if (typeof window.nativeHost.executeCommandAsync === 'function') {
-                try {
-                    const parametersJson = prepareParameters();
-
-                    // 使用异步 API（真正的异步，不阻塞 UI）
-                    window.nativeHost.executeCommandAsync(apiName, parametersJson, function (success, resultOrError) {
-                        try {
-                            if (success) {
-                                // 成功时，resultOrError 可能是 JSON 字符串或已解析的对象
-                                let parsedResult;
-                                if (typeof resultOrError === 'string') {
-                                    try {
-                                        parsedResult = JSON.parse(resultOrError);
-                                    } catch (e) {
-                                        // 如果不是 JSON，可能是普通字符串
-                                        parsedResult = { data: resultOrError };
-                                    }
-                                } else if (typeof resultOrError === 'object' && resultOrError !== null) {
-                                    parsedResult = resultOrError;
-                                } else {
-                                    parsedResult = { data: resultOrError };
-                                }
-
-                                // 处理返回格式
-                                // 异步 API 可能直接返回 ResultModel，也可能返回 { success: true, data: ResultModel }
-                                if (parsedResult.hasOwnProperty('isSuccess')) {
-                                    // 直接是 ResultModel 格式
-                                    resolve(parsedResult);
-                                } else if (parsedResult.success !== undefined) {
-                                    // 是 { success: true, data: ResultModel } 格式
-                                    if (parsedResult.success) {
-                                        resolve(processResult(parsedResult));
-                                    } else {
-                                        const errorMessage = parsedResult.error || parsedResult.message || 'NativeHost 调用失败';
-                                        reject(new Error(errorMessage));
-                                    }
-                                } else {
-                                    // 直接是数据对象
-                                    resolve(processResult({ data: parsedResult }));
-                                }
-                            } else {
-                                // 失败时，resultOrError 是错误消息字符串
-                                const errorMessage = typeof resultOrError === 'string' ? resultOrError : 'NativeHost 调用失败';
-                                reject(new Error(errorMessage));
-                            }
-                        } catch (error) {
-                            console.error('处理异步返回结果失败:', error);
-                            reject(error);
-                        }
-                    });
-                } catch (error) {
-                    console.error('NativeHost 异步调用失败:', error);
-                    reject(error);
-                }
-            } else if (typeof window.nativeHost.executeCommand === 'function') {
-                // 降级到同步 API（使用 setTimeout 包装实现异步）
-                // 使用 setTimeout 将同步调用推迟到下一个事件循环
-                // 这样可以真正让出控制权给浏览器，允许 UI 渲染和显示 loading 效果
-                setTimeout(() => {
+                // 优先使用异步 API（如果支持）
+                if (typeof window.nativeHost.executeCommandAsync === 'function') {
                     try {
                         const parametersJson = prepareParameters();
 
-                        // 调用 NativeHost（同步方法，通过 setTimeout 包装实现异步）
-                        // 注意：executeCommand 本身是同步的，会阻塞直到返回结果
-                        // 但通过 setTimeout，至少可以让浏览器在调用前渲染 UI（显示 loading）
-                        const resultJson = window.nativeHost.executeCommand(apiName, parametersJson);
-                        if (!resultJson) {
-                            throw new Error('NativeHost 返回空结果');
-                        }
+                        // 使用异步 API（真正的异步，不阻塞 UI）
+                        window.nativeHost.executeCommandAsync(apiName, parametersJson, function (success, resultOrError) {
+                            try {
+                                if (success) {
+                                    // 成功时，resultOrError 可能是 JSON 字符串或已解析的对象
+                                    let parsedResult;
+                                    if (typeof resultOrError === 'string') {
+                                        try {
+                                            parsedResult = JSON.parse(resultOrError);
+                                        } catch (e) {
+                                            // 如果不是 JSON，可能是普通字符串
+                                            parsedResult = { data: resultOrError };
+                                        }
+                                    } else if (typeof resultOrError === 'object' && resultOrError !== null) {
+                                        parsedResult = resultOrError;
+                                    } else {
+                                        parsedResult = { data: resultOrError };
+                                    }
 
-                        const result = JSON.parse(resultJson);
-
-                        // 检查调用是否成功
-                        if (!result.success) {
-                            // 失败时抛出错误，与 _invokeViaWebApi 保持一致
-                            const errorMessage = result.error || result.message || 'NativeHost 调用失败';
-                            throw new Error(errorMessage);
-                        }
-
-                        // 处理返回格式
-                        resolve(processResult(result));
+                                    // 处理返回格式
+                                    // 异步 API 可能直接返回 ResultModel，也可能返回 { success: true, data: ResultModel }
+                                    if (parsedResult.hasOwnProperty('isSuccess')) {
+                                        // 直接是 ResultModel 格式
+                                        resolve(parsedResult);
+                                    } else if (parsedResult.success !== undefined) {
+                                        // 是 { success: true, data: ResultModel } 格式
+                                        if (parsedResult.success) {
+                                            resolve(processResult(parsedResult));
+                                        } else {
+                                            const errorMessage = parsedResult.error || parsedResult.message || 'NativeHost 调用失败';
+                                            reject(new Error(errorMessage));
+                                        }
+                                    } else {
+                                        // 直接是数据对象
+                                        resolve(processResult({ data: parsedResult }));
+                                    }
+                                } else {
+                                    // 失败时，resultOrError 是错误消息字符串
+                                    const errorMessage = typeof resultOrError === 'string' ? resultOrError : 'NativeHost 调用失败';
+                                    reject(new Error(errorMessage));
+                                }
+                            } catch (error) {
+                                console.error('处理异步返回结果失败:', error);
+                                reject(error);
+                            }
+                        });
                     } catch (error) {
-                        console.error('NativeHost 调用失败:', error);
+                        console.error('NativeHost 异步调用失败:', error);
                         reject(error);
                     }
-                }, 0);
-            } else {
-                reject(new Error('NativeHost 不可用，无法执行调用'));
-            }
+                } else if (typeof window.nativeHost.executeCommand === 'function') {
+                    // 降级到同步 API（使用 setTimeout 包装实现异步）
+                    // 使用 setTimeout 将同步调用推迟到下一个事件循环
+                    // 这样可以真正让出控制权给浏览器，允许 UI 渲染和显示 loading 效果
+                    setTimeout(() => {
+                        try {
+                            const parametersJson = prepareParameters();
+
+                            // 调用 NativeHost（同步方法，通过 setTimeout 包装实现异步）
+                            // 注意：executeCommand 本身是同步的，会阻塞直到返回结果
+                            // 但通过 setTimeout，至少可以让浏览器在调用前渲染 UI（显示 loading）
+                            const resultJson = window.nativeHost.executeCommand(apiName, parametersJson);
+                            if (!resultJson) {
+                                throw new Error('NativeHost 返回空结果');
+                            }
+
+                            const result = JSON.parse(resultJson);
+
+                            // 检查调用是否成功
+                            if (!result.success) {
+                                // 失败时抛出错误，与 _invokeViaWebApi 保持一致
+                                const errorMessage = result.error || result.message || 'NativeHost 调用失败';
+                                throw new Error(errorMessage);
+                            }
+
+                            // 处理返回格式
+                            resolve(processResult(result));
+                        } catch (error) {
+                            console.error('NativeHost 调用失败:', error);
+                            reject(error);
+                        }
+                    }, 0);
+                } else {
+                    reject(new Error('NativeHost 不可用，无法执行调用'));
+                }
             });
         });
     },
@@ -681,20 +726,20 @@ JsCrm.webApi = {
             const apiMode = this._getApiMode();
 
             if (apiMode === 'nativehost') {
-                // 使用 NativeHost 异步调用
-                try {
-                    const result = await this._invokeViaNativeHostAsync(apiName, actionPara);
-                    return result;
-                } catch (error) {
-                    // 如果 NativeHost 调用失败，且不是强制模式，尝试降级到 WebAPI
-                    const config = context && context.envconfig ? context.envconfig : {};
-                    if (!config.FORCE_NATIVE_HOST) {
-                        console.warn('NativeHost 异步调用失败，降级使用 WebAPI:', error.message);
-                        return await this._invokeViaWebApi(apiName, actionPara);
-                    } else {
-                        throw error;
-                    }
+                // 先等待 NativeHost 就绪（waitForNativeHostIfNeeded 不会抛出异常，总是会 resolve）
+                await waitForNativeHostIfNeeded();
+
+                // 检查 NativeHost 是否真的可用
+                if (!this._isNativeHostReady()) {
+                    // NativeHost 未就绪，降级到 WebAPI
+                    console.warn('NativeHost 未就绪，降级使用 WebAPI');
+                    return await this._invokeViaWebApi(apiName, actionPara);
                 }
+
+                // NativeHost 已就绪，尝试调用
+                // 如果调用过程中出现异常（业务错误、网络错误等），正常抛出，不降级
+                const result = await this._invokeViaNativeHostAsync(apiName, actionPara);
+                return result;
             } else {
                 // 使用 WebAPI 调用
                 return await this._invokeViaWebApi(apiName, actionPara);
@@ -710,22 +755,20 @@ JsCrm.webApi = {
             const apiMode = this._getApiMode();
 
             if (apiMode === 'nativehost') {
-                // 使用 NativeHost 调用（同步方式，但包装为 Promise）
-                // 在桌面端，先等待 NativeHost 就绪
+                // 先等待 NativeHost 就绪（waitForNativeHostIfNeeded 不会抛出异常，总是会 resolve）
                 await waitForNativeHostIfNeeded();
-                try {
-                    const result = this._invokeViaNativeHost(apiName, actionPara);
-                    return result;
-                } catch (error) {
-                    // 如果 NativeHost 调用失败，且不是强制模式，尝试降级到 WebAPI
-                    const config = context && context.envconfig ? context.envconfig : {};
-                    if (!config.FORCE_NATIVE_HOST) {
-                        console.warn('NativeHost 调用失败，降级使用 WebAPI:', error.message);
-                        return await this._invokeViaWebApi(apiName, actionPara);
-                    } else {
-                        throw error;
-                    }
+
+                // 检查 NativeHost 是否真的可用
+                if (!this._isNativeHostReady()) {
+                    // NativeHost 未就绪，降级到 WebAPI
+                    console.warn('NativeHost 未就绪，降级使用 WebAPI');
+                    return await this._invokeViaWebApi(apiName, actionPara);
                 }
+
+                // NativeHost 已就绪，尝试调用
+                // 如果调用过程中出现异常（业务错误、网络错误等），正常抛出，不降级
+                const result = this._invokeViaNativeHost(apiName, actionPara);
+                return result;
             } else {
                 // 使用 WebAPI 调用
                 return await this._invokeViaWebApi(apiName, actionPara);

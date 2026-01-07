@@ -27,6 +27,8 @@ namespace APIService.RetrieveEntityMetadata
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetAllEntityMetadata");
+                Log.LogException(ex);
                 throw ex;
             }
         }
@@ -48,6 +50,8 @@ namespace APIService.RetrieveEntityMetadata
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetAllEntityMetadata");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;
@@ -136,6 +140,8 @@ namespace APIService.RetrieveEntityMetadata
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetAllEntityMetadataOptions");
+                Log.LogException(ex);
                 throw ex;
             }
             return entityOptions;
@@ -159,6 +165,8 @@ namespace APIService.RetrieveEntityMetadata
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetAttributeTypeList");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;
@@ -183,6 +191,8 @@ namespace APIService.RetrieveEntityMetadata
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetAllAttributeMetadataFromEntity");
+                Log.LogException(ex);
                 throw ex;
             }
         }
@@ -278,6 +288,8 @@ namespace APIService.RetrieveEntityMetadata
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetAllAttributeMetadataFromEntity");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;

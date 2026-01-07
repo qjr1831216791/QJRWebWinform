@@ -26,6 +26,8 @@ namespace APIService.RetrieveCRMData
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("RetrieveCRMData");
+                Log.LogException(ex);
                 throw ex;
             }
         }
@@ -127,6 +129,8 @@ namespace APIService.RetrieveCRMData
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("RetrieveCRMData");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;
@@ -148,6 +152,8 @@ namespace APIService.RetrieveCRMData
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("RetrieveCRMDataByFetchXml");
+                Log.LogException(ex);
                 throw ex;
             }
         }
@@ -170,6 +176,8 @@ namespace APIService.RetrieveCRMData
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("RetrieveCRMDataByFetchXml");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;

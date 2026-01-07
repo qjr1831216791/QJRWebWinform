@@ -40,6 +40,8 @@ namespace APIService.WeatherForecast
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetWeatherForecast");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;
@@ -59,6 +61,8 @@ namespace APIService.WeatherForecast
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetBaiduMapTownShip");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;

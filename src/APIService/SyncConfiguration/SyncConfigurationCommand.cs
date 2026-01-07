@@ -54,6 +54,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetEnvironments");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;
@@ -76,6 +78,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetSystemParameters");
+                Log.LogException(ex);
                 throw ex;
             }
         }
@@ -124,6 +128,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetSystemParameters");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;
@@ -201,7 +207,10 @@ namespace APIService.SyncConfiguration
                     }
                     catch (Exception ex)
                     {
-                        msg.AppendLine($"系统参数：{key} 同步失败：{ex.Message}");
+                        string _msg = $"系统参数：{key} 同步失败：{ex.Message}";
+                        Log.ErrorMsg("SyncSystemParameters");
+                        Log.ErrorMsg(_msg);
+                        msg.AppendLine(_msg);
                     }
                 }
 
@@ -209,6 +218,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("SyncSystemParameters");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;
@@ -231,6 +242,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetAutoNumbers");
+                Log.LogException(ex);
                 throw ex;
             }
         }
@@ -291,6 +304,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetAutoNumbers");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;
@@ -317,6 +332,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("SyncAutoNumbers");
+                Log.LogException(ex);
                 throw ex;
             }
         }
@@ -392,7 +409,10 @@ namespace APIService.SyncConfiguration
                     }
                     catch (Exception ex)
                     {
-                        msg.AppendLine($"自动编号：{new_name}-{new_nofieldname} 同步失败：{ex.Message}");
+                        string _msg = $"自动编号：{new_name}-{new_nofieldname} 同步失败：{ex.Message}";
+                        Log.ErrorMsg("SyncAutoNumbers");
+                        Log.ErrorMsg(_msg);
+                        msg.AppendLine(_msg);
                     }
                 }
 
@@ -400,6 +420,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("SyncAutoNumbers");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;
@@ -421,6 +443,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetDuplicateDetects");
+                Log.LogException(ex);
                 throw ex;
             }
         }
@@ -489,6 +513,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetDuplicateDetects");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;
@@ -515,6 +541,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("SyncDuplicateDetects");
+                Log.LogException(ex);
                 throw ex;
             }
         }
@@ -624,14 +652,20 @@ namespace APIService.SyncConfiguration
                             }
                             catch (Exception ex)
                             {
-                                msg.AppendLine($"重复性检测：{new_name}，明细：{detail_new_name} 同步失败：{ex.Message}");
+                                string _msg = $"重复性检测：{new_name}，明细：{detail_new_name} 同步失败：{ex.Message}";
+                                Log.ErrorMsg("SyncDuplicateDetects");
+                                Log.ErrorMsg(_msg);
+                                msg.AppendLine(_msg);
                             }
                         }
                         #endregion
                     }
                     catch (Exception ex)
                     {
-                        msg.AppendLine($"重复性检测：{new_name} 同步失败：{ex.Message}");
+                        string _msg = $"重复性检测：{new_name} 同步失败：{ex.Message}";
+                        Log.ErrorMsg("SyncDuplicateDetects");
+                        Log.ErrorMsg(_msg);
+                        msg.AppendLine(_msg);
                     }
                 }
 
@@ -639,6 +673,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("SyncDuplicateDetects");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;
@@ -661,6 +697,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetSumRelationshipDetails");
+                Log.LogException(ex);
                 throw ex;
             }
         }
@@ -715,6 +753,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetSumRelationshipDetails");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;
@@ -741,6 +781,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("SyncSumRelationshipDetails");
+                Log.LogException(ex);
                 throw ex;
             }
         }
@@ -819,7 +861,10 @@ namespace APIService.SyncConfiguration
                     }
                     catch (Exception ex)
                     {
-                        msg.AppendLine($"明细汇总：主实体：{new_name}({new_total})汇总子实体：{new_listentity}({new_list}) 同步失败：{ex.Message}");
+                        string _msg = $"明细汇总：主实体：{new_name}({new_total})汇总子实体：{new_listentity}({new_list}) 同步失败：{ex.Message}";
+                        Log.ErrorMsg("SyncSumRelationshipDetails");
+                        Log.ErrorMsg(_msg);
+                        msg.AppendLine(_msg);
                     }
                 }
 
@@ -827,6 +872,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("SyncSumRelationshipDetails");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;
@@ -849,6 +896,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetRibbonRules");
+                Log.LogException(ex);
                 throw ex;
             }
         }
@@ -920,6 +969,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetRibbonRules");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;
@@ -946,6 +997,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("SyncRibbonRules");
+                Log.LogException(ex);
                 throw ex;
             }
         }
@@ -1061,14 +1114,20 @@ namespace APIService.SyncConfiguration
                             }
                             catch (Exception ex)
                             {
-                                msg.AppendLine($"自定义按钮：{new_name}，明细：{new_roleid?.Name} 同步失败：{ex.Message}");
+                                string _msg = $"自定义按钮：{new_name}，明细：{new_roleid?.Name} 同步失败：{ex.Message}";
+                                Log.ErrorMsg("SyncRibbonRules");
+                                Log.ErrorMsg(_msg);
+                                msg.AppendLine(_msg);
                             }
                         }
                         #endregion
                     }
                     catch (Exception ex)
                     {
-                        msg.AppendLine($"自定义按钮：{new_name} 同步失败：{ex.Message}");
+                        string _msg = $"自定义按钮：{new_name} 同步失败：{ex.Message}";
+                        Log.ErrorMsg("SyncRibbonRules");
+                        Log.ErrorMsg(_msg);
+                        msg.AppendLine(_msg);
                     }
                 }
 
@@ -1076,6 +1135,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("SyncRibbonRules");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;
@@ -1098,6 +1159,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetCommonDeleteCheckPluginSteps");
+                Log.LogException(ex);
                 throw ex;
             }
         }
@@ -1166,6 +1229,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetCommonDeleteCheckPluginSteps");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;
@@ -1192,6 +1257,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("SyncCommonDeleteCheckPluginSteps");
+                Log.LogException(ex);
                 throw ex;
             }
         }
@@ -1284,7 +1351,10 @@ namespace APIService.SyncConfiguration
                     }
                     catch (Exception ex)
                     {
-                        msg.AppendLine($"CommonDeleteCheck步骤：{name} 同步失败：{ex.Message}");
+                        string _msg = $"CommonDeleteCheck步骤：{name} 同步失败：{ex.Message}";
+                        Log.ErrorMsg("SyncCommonDeleteCheckPluginSteps");
+                        Log.ErrorMsg(_msg);
+                        msg.AppendLine(_msg);
                     }
                 }
 
@@ -1292,6 +1362,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("SyncCommonDeleteCheckPluginSteps");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;
@@ -1314,6 +1386,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetImportConfigs");
+                Log.LogException(ex);
                 throw ex;
             }
         }
@@ -1364,6 +1438,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetImportConfigs");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;
@@ -1390,6 +1466,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("SyncImportConfigs");
+                Log.LogException(ex);
                 throw ex;
             }
         }
@@ -1469,7 +1547,10 @@ namespace APIService.SyncConfiguration
                     }
                     catch (Exception ex)
                     {
-                        msg.AppendLine($"数据导入：{new_name} 同步失败：{ex.Message}");
+                        string _msg = $"数据导入：{new_name} 同步失败：{ex.Message}";
+                        Log.ErrorMsg("SyncImportConfigs");
+                        Log.ErrorMsg(_msg);
+                        msg.AppendLine(_msg);
                     }
                 }
 
@@ -1477,6 +1558,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("SyncImportConfigs");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;
@@ -1500,6 +1583,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetLanguageConfigs");
+                Log.LogException(ex);
                 throw ex;
             }
         }
@@ -1585,6 +1670,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetLanguageConfigs");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;
@@ -1611,6 +1698,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("SyncLanguageConfigs");
+                Log.LogException(ex);
                 throw ex;
             }
         }
@@ -1716,7 +1805,10 @@ namespace APIService.SyncConfiguration
                     }
                     catch (Exception ex)
                     {
-                        msg.AppendLine($"语言配置：{new_name} 同步失败：{ex.Message}");
+                        string _msg = $"语言配置：{new_name} 同步失败：{ex.Message}";
+                        Log.ErrorMsg("SyncLanguageConfigs");
+                        Log.ErrorMsg(_msg);
+                        msg.AppendLine(_msg);
                     }
                 }
 
@@ -1724,6 +1816,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("SyncLanguageConfigs");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;
@@ -1746,6 +1840,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetDocumenttemplates");
+                Log.LogException(ex);
                 throw ex;
             }
         }
@@ -1803,6 +1899,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetDocumenttemplates");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;
@@ -1829,6 +1927,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("SyncDocumenttemplates");
+                Log.LogException(ex);
                 throw ex;
             }
         }
@@ -1904,7 +2004,10 @@ namespace APIService.SyncConfiguration
                     }
                     catch (Exception ex)
                     {
-                        msg.AppendLine($"系统模板：{new_name} 同步失败：{ex.Message}");
+                        string _msg = $"系统模板：{new_name} 同步失败：{ex.Message}";
+                        Log.ErrorMsg("SyncDocumenttemplates");
+                        Log.ErrorMsg(_msg);
+                        msg.AppendLine(_msg);
                     }
                 }
 
@@ -1912,6 +2015,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("SyncDocumenttemplates");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;
@@ -1936,6 +2041,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("DownloadTemplate");
+                Log.LogException(ex);
                 throw ex;
             }
         }
@@ -1972,6 +2079,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("DownloadTemplate");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;
@@ -2031,6 +2140,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("SyncAnnotations");
+                Log.LogException(ex);
                 throw ex;
             }
         }
@@ -2093,6 +2204,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetMultipleLanguageContrasts");
+                Log.LogException(ex);
                 throw ex;
             }
         }
@@ -2143,6 +2256,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetMultipleLanguageContrasts");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;
@@ -2222,7 +2337,10 @@ namespace APIService.SyncConfiguration
                     }
                     catch (Exception ex)
                     {
-                        msg.AppendLine($"系统参数：{key} 同步失败：{ex.Message}");
+                        string _msg = $"系统参数：{key} 同步失败：{ex.Message}";
+                        Log.ErrorMsg("SyncMultipleLanguageContrasts");
+                        Log.ErrorMsg(_msg);
+                        msg.AppendLine(_msg);
                     }
                 }
 
@@ -2230,6 +2348,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("SyncMultipleLanguageContrasts");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;
@@ -2253,6 +2373,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetDataLanguageConfigs");
+                Log.LogException(ex);
                 throw ex;
             }
         }
@@ -2346,6 +2468,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetDataLanguageConfigs");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;
@@ -2372,6 +2496,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("SyncDataLanguageConfigs");
+                Log.LogException(ex);
                 throw ex;
             }
         }
@@ -2561,7 +2687,10 @@ namespace APIService.SyncConfiguration
                     }
                     catch (Exception ex)
                     {
-                        msg.AppendLine($"数据多语言配置：{key} 同步失败：{ex.Message}");
+                        string _msg = $"数据多语言配置：{key} 同步失败：{ex.Message}";
+                        Log.ErrorMsg("SyncDataLanguageConfigs");
+                        Log.ErrorMsg(_msg);
+                        msg.AppendLine(_msg);
                     }
                 }
 
@@ -2569,6 +2698,8 @@ namespace APIService.SyncConfiguration
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("SyncDataLanguageConfigs");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;

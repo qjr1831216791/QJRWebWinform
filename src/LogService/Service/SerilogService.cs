@@ -16,7 +16,9 @@ namespace LogService.Service
             {
                 logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, logConfig.TracePath),
                 rollingInterval = RollingInterval.Day,
-                retainedFileCountLimit = logConfig.KeepLogDays,
+                retainedFileTimeLimit = TimeSpan.FromDays(logConfig.KeepLogDays),
+                fileSizeLimitBytes = 10 * 1024 * 1024, // 10MB
+                rollOnFileSizeLimit = true,
                 outputTemplate = "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level}] {Message}{NewLine}{Exception}{NewLine}" // 可选：自定义模板
             };
             this.Init();
@@ -74,7 +76,9 @@ namespace LogService.Service
                 .WriteTo.File(
                     path: writeLogConfig.logPath, // 日志文件路径
                     rollingInterval: writeLogConfig.rollingInterval, // 按天滚动
-                    retainedFileCountLimit: writeLogConfig.retainedFileCountLimit, // 保留最近 X 天的日志
+                    retainedFileTimeLimit: writeLogConfig.retainedFileTimeLimit, // 保留最近 X 天的日志
+                    fileSizeLimitBytes: writeLogConfig.fileSizeLimitBytes, // 单个文件最大10MB
+                    rollOnFileSizeLimit: writeLogConfig.rollOnFileSizeLimit, // 达到大小限制时创建新文件
                     outputTemplate: writeLogConfig.outputTemplate
                 )
                 .CreateLogger();
@@ -192,9 +196,19 @@ namespace LogService.Service
         public RollingInterval rollingInterval { get; set; }
 
         /// <summary>
-        /// 保留日志文件的天数限制，超过此天数的日志文件将被自动删除
+        /// 保留日志文件的时间限制，超过此时间的日志文件将被自动删除
         /// </summary>
-        public int retainedFileCountLimit { get; set; }
+        public TimeSpan? retainedFileTimeLimit { get; set; }
+
+        /// <summary>
+        /// 单个日志文件的最大大小限制（字节），超过此大小将创建新文件
+        /// </summary>
+        public long? fileSizeLimitBytes { get; set; }
+
+        /// <summary>
+        /// 当日志文件达到大小限制时是否创建新文件
+        /// </summary>
+        public bool rollOnFileSizeLimit { get; set; }
 
         /// <summary>
         /// 日志输出模板，用于格式化日志消息的显示格式

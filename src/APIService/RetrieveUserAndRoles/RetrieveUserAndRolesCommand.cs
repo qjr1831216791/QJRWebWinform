@@ -27,6 +27,8 @@ namespace APIService.RetrieveEntityMetadata
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetUserAndRoles");
+                Log.LogException(ex);
                 throw ex;
             }
         }
@@ -126,6 +128,8 @@ namespace APIService.RetrieveEntityMetadata
             }
             catch (Exception ex)
             {
+                Log.ErrorMsg("GetUserAndRoles");
+                Log.LogException(ex);
                 throw ex;
             }
             return result;
