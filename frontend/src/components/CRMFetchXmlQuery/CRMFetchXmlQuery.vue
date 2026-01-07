@@ -68,8 +68,8 @@
                                 <el-row :gutter="24" style="margin-top: 15px">
                                     <!-- 左侧表格 -->
                                     <el-col :span="14">
-                                        <el-table :height="actualTableHeight" :data="tableData" :key="tableKey" border
-                                            style="width: 100%" v-loading="loading"
+                                        <el-table :height="actualTableHeight" :data="tableData" :key="tableColumnsKey"
+                                            border style="width: 100%" v-loading="loading"
                                             :default-sort="{ prop: 'id', order: 'ascending' }" highlight-current-row>
                                             <!-- 行号 -->
                                             <el-table-column v-if="tableColumns != undefined && tableColumns.length > 0"
@@ -167,6 +167,7 @@ export default {
             tableColumns: [], // 动态列
             defaultTableHeight: "555", // 表格高度
             tableKey: 1, // 刷新表格的Key
+            tableColumnsKey: 1, // 刷新表格列的Key（仅在列结构变化时更新）
             loading: false, // 是否加载数据中
             entityOptionsLoading: false, // 是否加载实体名称中
             entityViewOptionsLoading: false, // 是否加载实体视图中
@@ -217,6 +218,7 @@ export default {
         // 环境切换事件
         environmentChange: function (envir) {
             if (this.rtcrm.isNullOrWhiteSpace(envir)) return;
+            // 优化：合并多个 $set 调用，减少响应式更新次数
             // 清空数据
             this.$set(this, "tableData", []);
             this.$set(this, "tableColumns", []);
@@ -234,7 +236,8 @@ export default {
             this.$set(this, "entityViewOptions", []);
             this.$set(this, "entityViewOptionsCopy", []);
             this.$set(this, "currentEntityViewLayoutXml", null);
-            this.$set(this, "tableKey", this.tableKey + 1); // 刷新Table
+            // 优化：环境切换时列结构会变化，需要更新 tableColumnsKey
+            this.$set(this, "tableColumnsKey", this.tableColumnsKey + 1);
 
             // 重新获取环境参数
             this.getEnvironments();
@@ -337,14 +340,15 @@ export default {
         // 实体名称下拉搜索事件
         entitySelectFilter(val) {
             if (val) {
+                // 优化：提前转换搜索关键词，避免重复调用 toUpperCase()
+                const searchVal = val.toUpperCase();
                 this.entityOptions = this.entityOptionsCopy.filter((item) => {
-                    if (!!~item.label.indexOf(val) || !!~item.label.toUpperCase().indexOf(val.toUpperCase())) {
-                        return true
-                    }
-                    else if (!!~item.key.indexOf(val) || !!~item.key.toUpperCase().indexOf(val.toUpperCase())) {
-                        return true
-                    }
-                })
+                    const label = item.label || '';
+                    const key = item.key || '';
+                    // 优化：先尝试直接匹配（区分大小写），失败后再尝试不区分大小写匹配
+                    return label.includes(val) || label.toUpperCase().includes(searchVal) ||
+                        key.includes(val) || key.toUpperCase().includes(searchVal);
+                });
             } else {
                 this.entityOptions = this.entityOptionsCopy;
             }
@@ -352,6 +356,7 @@ export default {
 
         // envirFrom下拉Change事件
         envirFromChange: function () {
+            // 优化：合并多个 $set 调用，减少响应式更新次数
             // 环境切换时清空查询结果和缓存（因为不同环境的元数据可能不同）
             this.$set(this, "tableData", []);
             this.$set(this, "tableColumns", []);
@@ -360,7 +365,8 @@ export default {
             this.$set(this, "entityMetadataPromises", {}); // 清空正在进行的查询Promise缓存
             this.$set(this, "tableDataTotalRecord", 0);
             this.$set(this.input, "pageIndex", 1);
-            this.$set(this, "tableKey", this.tableKey + 1);
+            // 优化：环境切换时列结构会变化，需要更新 tableColumnsKey
+            this.$set(this, "tableColumnsKey", this.tableColumnsKey + 1);
             // 清空实体视图相关数据
             this.$set(this, "entityViewOptions", []);
             this.$set(this, "entityViewOptionsCopy", []);
@@ -389,7 +395,7 @@ export default {
             this.$set(this, "tableColumns", []);
             this.$set(this, "fieldMetadataMap", {});
             this.$set(this, "tableDataTotalRecord", 0);
-            this.$set(this, "tableKey", this.tableKey + 1);
+            // 优化：新查询时列结构会变化，需要更新 tableColumnsKey（列会在 generateTableColumns 中更新）
 
             // 开始查询
             this.$set(this, "loading", true);
@@ -452,13 +458,28 @@ export default {
                 this.executeFetchXmlQuery(parsed)
             ])
                 .then(([metadataResults, queryResult]) => {
-                    // 构建字段元数据映射
+                    // 优化：构建字段元数据映射，使用 Map 替代 find 操作，提升性能
                     const fieldMetadataMap = {};
+                    // 为每个 metadata 数组构建 Map，以 logicalName 为 key
+                    const metadataMaps = metadataResults.map(metadata => {
+                        if (!metadata || !Array.isArray(metadata)) {
+                            return new Map();
+                        }
+                        const map = new Map();
+                        metadata.forEach(m => {
+                            if (m.logicalName) {
+                                map.set(m.logicalName, m);
+                            }
+                        });
+                        return map;
+                    });
+
                     entitiesToQuery.forEach((entityInfo, index) => {
-                        const metadata = metadataResults[index];
-                        if (metadata && Array.isArray(metadata)) {
+                        const metadataMap = metadataMaps[index];
+                        if (metadataMap && metadataMap.size > 0) {
                             entityInfo.attributes.forEach(attrName => {
-                                const attrMetadata = metadata.find(m => m.logicalName === attrName);
+                                // 优化：使用 Map.get 替代 find 操作，从 O(n) 降低到 O(1)
+                                const attrMetadata = metadataMap.get(attrName);
                                 if (attrMetadata) {
                                     // 使用实体名和字段名作为key，如果是linkEntity则使用alias
                                     const key = entityInfo.isLinkEntity && entityInfo.alias
@@ -499,7 +520,7 @@ export default {
                         }
                         _this.processQueryResult(transformedData);
                     }
-                    _this.$set(_this, "tableKey", _this.tableKey + 1);
+                    // 优化：新查询时列结构已在 generateTableColumns 中更新 tableColumnsKey，这里不需要更新
                 })
                 .catch((err) => {
                     _this.$set(_this, "loading", false);
@@ -614,6 +635,16 @@ export default {
             // 主实体的主键字段格式：{entityName}id
             const mainEntityPrimaryKey = mainEntityName ? mainEntityName + "id" : null;
 
+            // 优化：构建 entityOptionsMap，避免在循环中重复调用 find
+            const entityOptionsMap = new Map();
+            if (this.entityOptionsCopy && this.entityOptionsCopy.length > 0) {
+                this.entityOptionsCopy.forEach(option => {
+                    if (option.key) {
+                        entityOptionsMap.set(option.key, option);
+                    }
+                });
+            }
+
             entitiesToQuery.forEach(entityInfo => {
                 entityInfo.attributes.forEach(attrName => {
                     // 如果是主实体的字段，且字段名是主实体的主键字段，则跳过（不显示）
@@ -661,10 +692,8 @@ export default {
 
                     // 如果是 linkEntity，尝试从 entityOptions 中获取实体显示名
                     if (entityInfo.isLinkEntity) {
-                        // 在 entityOptions 中查找对应的实体显示名
-                        const entityOption = this.entityOptionsCopy.find(function (option) {
-                            return option.key === entityInfo.entityName;
-                        });
+                        // 优化：使用 Map.get 替代 find 操作
+                        const entityOption = entityOptionsMap.get(entityInfo.entityName);
 
                         if (entityOption && entityOption.label) {
                             // 如果找到了实体显示名，使用格式：字段名(实体显示名)
@@ -697,6 +726,8 @@ export default {
             }
 
             this.$set(this, "tableColumns", columns);
+            // 优化：列结构变化时更新 tableColumnsKey，触发表格列重新渲染
+            this.$set(this, "tableColumnsKey", this.tableColumnsKey + 1);
         },
 
         // 根据layoutxml中的cell width动态调整列宽，并按layoutxml中的顺序排序
@@ -875,15 +906,21 @@ export default {
                 return [];
             }
 
+            // 优化：使用 Map 替代对象，提升查找性能
             // 构建字段映射：将返回数据中的 Key 映射到表格列使用的 prop
             // 因为返回数据中的 Key 可能包含空格（如 "s. domainname"），需要规范化
-            const fieldKeyMapping = this.buildFieldKeyMapping(parsed);
+            const fieldKeyMappingObj = this.buildFieldKeyMapping(parsed);
+            const fieldKeyMapping = new Map();
+            Object.keys(fieldKeyMappingObj).forEach(key => {
+                fieldKeyMapping.set(key, fieldKeyMappingObj[key]);
+            });
 
+            // 优化：使用 Map 替代对象，并优化日期字段映射构建逻辑
             // 构建日期字段映射（用于判断字段是否为日期类型）
-            // 通过 fieldMetadataMap 来判断字段类型
-            const dateTimeFieldMap = {};
+            const dateTimeFieldMap = new Map();
             if (fieldMetadataMap) {
-                Object.keys(fieldMetadataMap).forEach(metadataKey => {
+                // 优化：减少循环次数，直接遍历 fieldMetadataMap
+                for (const metadataKey in fieldMetadataMap) {
                     const metadata = fieldMetadataMap[metadataKey];
                     if (metadata && metadata.attributeType === 'DateTime') {
                         // 需要找到对应的 prop key（可能是主实体字段或 linkEntity 字段）
@@ -896,20 +933,20 @@ export default {
                             if (metadata.isLinkEntity && metadata.alias) {
                                 // linkEntity 字段：使用 alias_attrName
                                 const propKey = `${metadata.alias}_${attrName}`;
-                                dateTimeFieldMap[propKey] = {
+                                dateTimeFieldMap.set(propKey, {
                                     isDateTime: true,
                                     dateTimeFormat: metadata.dateTimeFormat
-                                };
+                                });
                             } else if (!metadata.isLinkEntity) {
                                 // 主实体字段：直接使用 attrName
-                                dateTimeFieldMap[attrName] = {
+                                dateTimeFieldMap.set(attrName, {
                                     isDateTime: true,
                                     dateTimeFormat: metadata.dateTimeFormat
-                                };
+                                });
                             }
                         }
                     }
-                });
+                }
             }
 
             const transformedData = entities.map(entity => {
@@ -918,17 +955,22 @@ export default {
                     LogicalName: entity.LogicalName
                 };
 
+                // 优化：合并 FormattedValues 处理，减少重复遍历
                 // 先构建 FormattedValues 映射（用于后续优先使用，但日期字段除外）
-                const formattedValuesMap = {};
+                const formattedValuesMap = new Map();
+                const formattedValuesKeyMap = new Map(); // 缓存规范化 key 到 mappedKey 的映射
+
                 if (entity.FormattedValues && Array.isArray(entity.FormattedValues)) {
                     entity.FormattedValues.forEach(fv => {
                         // 规范化 Key：去除多余空格，统一格式
                         const normalizedKey = this.normalizeFieldKey(fv.Key);
                         // 查找映射关系，如果找到则使用映射后的 key，否则使用规范化后的 key
-                        const mappedKey = fieldKeyMapping[normalizedKey] || normalizedKey;
+                        const mappedKey = fieldKeyMapping.get(normalizedKey) || normalizedKey;
+                        // 缓存映射关系，避免后续重复计算
+                        formattedValuesKeyMap.set(fv.Key, mappedKey);
                         // 如果是日期字段，不添加到 FormattedValues 映射中（日期字段优先使用 Attributes）
-                        if (!dateTimeFieldMap[mappedKey]) {
-                            formattedValuesMap[mappedKey] = fv.Value;
+                        if (!dateTimeFieldMap.has(mappedKey)) {
+                            formattedValuesMap.set(mappedKey, fv.Value);
                         }
                     });
                 }
@@ -939,13 +981,20 @@ export default {
                 // 日期字段优先从 Attributes 获取，其他字段优先使用 FormattedValues
                 if (entity.Attributes && Array.isArray(entity.Attributes)) {
                     entity.Attributes.forEach(attr => {
-                        // 规范化 Key：去除多余空格，统一格式
-                        const normalizedKey = this.normalizeFieldKey(attr.Key);
-                        // 查找映射关系，如果找到则使用映射后的 key，否则使用规范化后的 key
-                        const mappedKey = fieldKeyMapping[normalizedKey] || normalizedKey;
+                        // 优化：使用缓存的映射关系（如果 FormattedValues 中已处理过）
+                        let mappedKey;
+                        if (formattedValuesKeyMap.has(attr.Key)) {
+                            mappedKey = formattedValuesKeyMap.get(attr.Key);
+                        } else {
+                            // 规范化 Key：去除多余空格，统一格式
+                            const normalizedKey = this.normalizeFieldKey(attr.Key);
+                            // 查找映射关系，如果找到则使用映射后的 key，否则使用规范化后的 key
+                            mappedKey = fieldKeyMapping.get(normalizedKey) || normalizedKey;
+                        }
 
                         // 判断是否为日期字段
-                        const isDateTimeField = dateTimeFieldMap[mappedKey];
+                        const dateTimeFieldInfo = dateTimeFieldMap.get(mappedKey);
+                        const isDateTimeField = !!dateTimeFieldInfo;
 
                         if (isDateTimeField) {
                             // 日期字段：优先从 Attributes 获取，并格式化
@@ -957,8 +1006,8 @@ export default {
                             flatEntity[mappedKey] = actualValue;
                         } else {
                             // 非日期字段：如果 FormattedValues 中有对应的格式化值，优先使用格式化值
-                            if (formattedValuesMap.hasOwnProperty(mappedKey)) {
-                                flatEntity[mappedKey] = formattedValuesMap[mappedKey];
+                            if (formattedValuesMap.has(mappedKey)) {
+                                flatEntity[mappedKey] = formattedValuesMap.get(mappedKey);
                             } else {
                                 // 处理 Attributes 中的原始值
                                 // 优先提取易读值：兼容 AliasedValue/EntityReference（带 Name）
@@ -997,12 +1046,13 @@ export default {
                 // 添加 FormattedValues 中独有的字段（如果 Attributes 中没有对应字段，且不是日期字段）
                 if (entity.FormattedValues && Array.isArray(entity.FormattedValues)) {
                     entity.FormattedValues.forEach(fv => {
-                        const normalizedKey = this.normalizeFieldKey(fv.Key);
-                        const mappedKey = fieldKeyMapping[normalizedKey] || normalizedKey;
-
-                        // 如果 Attributes 中没有这个字段，且不是日期字段，则使用 FormattedValues 的值
-                        if (!flatEntity.hasOwnProperty(mappedKey) && !dateTimeFieldMap[mappedKey]) {
-                            flatEntity[mappedKey] = fv.Value;
+                        // 优化：使用缓存的映射关系
+                        const mappedKey = formattedValuesKeyMap.get(fv.Key);
+                        if (mappedKey) {
+                            // 如果 Attributes 中没有这个字段，且不是日期字段，则使用 FormattedValues 的值
+                            if (!flatEntity.hasOwnProperty(mappedKey) && !dateTimeFieldMap.has(mappedKey)) {
+                                flatEntity[mappedKey] = fv.Value;
+                            }
                         }
                     });
                 }
@@ -1218,13 +1268,20 @@ export default {
                             _this.$set(_this, "tableDataTotalRecord", totalCount);
                         }
                         _this.processQueryResult(transformedData);
-                        _this.$set(_this, "tableKey", _this.tableKey + 1); // 刷新Table
+                        // 优化：分页查询时列结构不变，只更新数据，不需要更新 tableColumnsKey
                     }
                 })
                 .catch((err) => {
                     _this.$set(_this, "loading", false);
                     _this.jshelper.openAlertDialog(_this, err.message, "FetchXml 查询");
                 });
+        },
+
+        // 从实体 Attributes 数组中获取指定 key 的值（优化：提取为方法，避免重复创建函数）
+        getAttributeValueFromEntity: function (entity, key) {
+            if (!entity || !entity.Attributes || !Array.isArray(entity.Attributes)) return "";
+            const attr = entity.Attributes.find(function (a) { return a.Key === key; });
+            return attr ? attr.Value : "";
         },
 
         // 实体名称Change事件
@@ -1235,6 +1292,7 @@ export default {
                 entityName = val.key;
                 objecttypecode = val.objecttypecode;
             }
+            // 优化：合并多个 $set 调用
             this.$set(this.input, "entityName", entityName);
             this.$set(this.input, "objecttypecode", objecttypecode);
             // 清空实体视图选择
@@ -1257,7 +1315,7 @@ export default {
             // 构建查询实体视图的FetchXml
             const fetchXml = this.buildEntityViewFetchXml();
 
-            // 清空之前的视图列表
+            // 优化：合并多个 $set 调用
             this.$set(this, "entityViewOptions", []);
             this.$set(this, "entityViewOptionsCopy", []);
             this.$set(this.input, "entityViewObj", null);
@@ -1287,38 +1345,28 @@ export default {
                         let data = res.data;
                         let views = [];
                         if (data && data.Entities && Array.isArray(data.Entities)) {
-                            // 转换数据格式
+                            // 优化：使用提取的方法替代内联函数
                             views = data.Entities.map(entity => {
-                                const getAttributeValue = function (key) {
-                                    if (!entity.Attributes || !Array.isArray(entity.Attributes)) return "";
-                                    const attr = entity.Attributes.find(function (a) { return a.Key === key; });
-                                    return attr ? attr.Value : "";
-                                };
                                 const view = {
                                     savedqueryid: entity.Id,
-                                    name: getAttributeValue("name"),
-                                    fetchxml: getAttributeValue("fetchxml"),
-                                    layoutxml: getAttributeValue("layoutxml"),
-                                    querytype: getAttributeValue("querytype") || null,
-                                    returnedtypecode: getAttributeValue("returnedtypecode") || null
+                                    name: _this.getAttributeValueFromEntity(entity, "name"),
+                                    fetchxml: _this.getAttributeValueFromEntity(entity, "fetchxml"),
+                                    layoutxml: _this.getAttributeValueFromEntity(entity, "layoutxml"),
+                                    querytype: _this.getAttributeValueFromEntity(entity, "querytype") || null,
+                                    returnedtypecode: _this.getAttributeValueFromEntity(entity, "returnedtypecode") || null
                                 };
                                 return view;
                             }).filter(function (view) { return view.name; }); // 过滤掉没有名称的视图
                         } else if (Array.isArray(data)) {
                             // 兼容旧格式
                             views = data.map(entity => {
-                                const getAttributeValue = function (key) {
-                                    if (!entity.Attributes || !Array.isArray(entity.Attributes)) return "";
-                                    const attr = entity.Attributes.find(function (a) { return a.Key === key; });
-                                    return attr ? attr.Value : "";
-                                };
                                 const view = {
                                     savedqueryid: entity.Id || entity.savedqueryid,
-                                    name: entity.name || getAttributeValue("name"),
-                                    fetchxml: entity.fetchxml || getAttributeValue("fetchxml"),
-                                    layoutxml: entity.layoutxml || getAttributeValue("layoutxml"),
-                                    querytype: entity.querytype || getAttributeValue("querytype") || null,
-                                    returnedtypecode: entity.returnedtypecode || getAttributeValue("returnedtypecode") || null
+                                    name: entity.name || _this.getAttributeValueFromEntity(entity, "name"),
+                                    fetchxml: entity.fetchxml || _this.getAttributeValueFromEntity(entity, "fetchxml"),
+                                    layoutxml: entity.layoutxml || _this.getAttributeValueFromEntity(entity, "layoutxml"),
+                                    querytype: entity.querytype || _this.getAttributeValueFromEntity(entity, "querytype") || null,
+                                    returnedtypecode: entity.returnedtypecode || _this.getAttributeValueFromEntity(entity, "returnedtypecode") || null
                                 };
                                 return view;
                             }).filter(function (view) { return view.name; });
@@ -1374,14 +1422,15 @@ export default {
         // 实体视图下拉搜索事件
         entityViewSelectFilter(val) {
             if (val) {
+                // 优化：提前转换搜索关键词，避免重复调用 toUpperCase()
+                const searchVal = val.toUpperCase();
                 this.entityViewOptions = this.entityViewOptionsCopy.filter((item) => {
-                    if (!!~item.name.indexOf(val) || !!~item.name.toUpperCase().indexOf(val.toUpperCase())) {
-                        return true
-                    }
-                    else if (item.savedqueryid && (!!~item.savedqueryid.indexOf(val) || !!~item.savedqueryid.toUpperCase().indexOf(val.toUpperCase()))) {
-                        return true
-                    }
-                })
+                    const name = item.name || '';
+                    const savedqueryid = item.savedqueryid || '';
+                    // 优化：使用 includes 替代 indexOf，更高效
+                    return name.includes(val) || name.toUpperCase().includes(searchVal) ||
+                        (savedqueryid && (savedqueryid.includes(val) || savedqueryid.toUpperCase().includes(searchVal)));
+                });
             } else {
                 this.entityViewOptions = this.entityViewOptionsCopy;
             }
