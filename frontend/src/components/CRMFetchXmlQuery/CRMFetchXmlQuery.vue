@@ -101,16 +101,24 @@
                                     <el-col :span="10">
                                         <el-card class="input-panel" :style="{ height: tableHeight }">
                                             <div slot="header" class="detail-header">
-                                                <el-tooltip v-model="sql2FetchXmlUrlTooltip" effect="dark"
-                                                    content="点击跳转Sql2FetchXmlUrl网站" placement="right">
-                                                    <a :href="sql2FetchXmlUrl" target="_blank">FetchXml 查询</a>
-                                                </el-tooltip>
+                                                <div
+                                                    style="display: flex; justify-content: space-between; align-items: center;">
+                                                    <el-tooltip v-model="sql2FetchXmlUrlTooltip" effect="dark"
+                                                        content="点击跳转Sql2FetchXmlUrl网站" placement="right">
+                                                        <a :href="sql2FetchXmlUrl" target="_blank">FetchXml 查询</a>
+                                                    </el-tooltip>
+                                                    <el-button size="mini" icon="el-icon-sort" @click="formatFetchXml"
+                                                        :disabled="loading || !input.fetchXml || input.fetchXml.trim() === ''"
+                                                        title="格式化 XML">
+                                                        格式化
+                                                    </el-button>
+                                                </div>
                                             </div>
                                             <!-- 输入区域 -->
                                             <div class="input-section">
                                                 <el-form :model="input" size="medium" label-position="top">
                                                     <el-form-item style="margin-bottom: 10px;">
-                                                        <el-input type="textarea" :rows="18" v-model="input.fetchXml"
+                                                        <el-input type="textarea" :rows="19" v-model="input.fetchXml"
                                                             placeholder="请输入 FetchXml 查询字符串" :disabled="loading">
                                                         </el-input>
                                                     </el-form-item>
@@ -1435,6 +1443,107 @@ export default {
                 this.entityViewOptions = this.entityViewOptionsCopy;
             }
         },
+
+        // 格式化 FetchXml
+        formatFetchXml: function () {
+            if (this.rtcrm.isNullOrWhiteSpace(this.input.fetchXml)) {
+                return;
+            }
+
+            try {
+                // 使用 DOMParser 解析 XML
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(this.input.fetchXml, "text/xml");
+
+                // 检查解析错误
+                const parseError = xmlDoc.querySelector("parsererror");
+                if (parseError) {
+                    this.jshelper.openAlertDialog(this, "XML 格式错误，无法格式化：" + parseError.textContent, "格式化 FetchXml");
+                    return;
+                }
+
+                // 格式化 XML（添加缩进）
+                const formattedXml = this.formatXmlString(xmlDoc.documentElement);
+
+                // 更新输入框
+                this.$set(this.input, "fetchXml", formattedXml);
+
+                // 提示成功（可选）
+                this.$message.success("FetchXml 格式化成功");
+            } catch (error) {
+                console.error("格式化 FetchXml 失败:", error);
+                this.jshelper.openAlertDialog(this, "格式化失败：" + error.message, "格式化 FetchXml");
+            }
+        },
+
+        // 格式化 XML 字符串（递归添加缩进）
+        formatXmlString: function (node, indent = "") {
+            const indentStep = "  "; // 使用 2 个空格作为缩进
+            let result = "";
+
+            if (node.nodeType === 1) {
+                // 元素节点
+                const tagName = node.tagName;
+                const attributes = [];
+
+                // 收集属性（按字母顺序排序，使输出更一致）
+                if (node.attributes && node.attributes.length > 0) {
+                    const attrArray = [];
+                    for (let i = 0; i < node.attributes.length; i++) {
+                        const attr = node.attributes[i];
+                        attrArray.push(attr);
+                    }
+                    // 按属性名排序（可选，使输出更一致）
+                    attrArray.sort((a, b) => a.name.localeCompare(b.name));
+                    attrArray.forEach(attr => {
+                        attributes.push(`${attr.name}="${attr.value}"`);
+                    });
+                }
+
+                // 构建开始标签
+                const attrString = attributes.length > 0 ? " " + attributes.join(" ") : "";
+                const startTag = `<${tagName}${attrString}>`;
+
+                // 处理子节点
+                const childNodes = Array.from(node.childNodes);
+                const elementChildren = childNodes.filter(n => n.nodeType === 1);
+                const textChildren = childNodes.filter(n => n.nodeType === 3 && n.textContent.trim());
+
+                if (elementChildren.length === 0 && textChildren.length === 0) {
+                    // 自闭合标签
+                    result = `${indent}${startTag.replace(">", " />")}`;
+                } else if (elementChildren.length === 0 && textChildren.length > 0) {
+                    // 只有文本内容
+                    const textContent = textChildren.map(n => n.textContent.trim()).join(" ");
+                    result = `${indent}${startTag}${textContent}</${tagName}>`;
+                } else {
+                    // 有子元素
+                    result = `${indent}${startTag}\n`;
+                    // 处理子节点（包括文本节点和元素节点）
+                    childNodes.forEach(child => {
+                        if (child.nodeType === 1) {
+                            // 元素节点
+                            const formatted = this.formatXmlString(child, indent + indentStep);
+                            if (formatted) {
+                                result += formatted + "\n";
+                            }
+                        } else if (child.nodeType === 3 && child.textContent.trim()) {
+                            // 文本节点（非空白）
+                            result += indent + indentStep + child.textContent.trim() + "\n";
+                        }
+                    });
+                    result += `${indent}</${tagName}>`;
+                }
+            } else if (node.nodeType === 3) {
+                // 文本节点
+                const text = node.textContent.trim();
+                if (text) {
+                    result = indent + text;
+                }
+            }
+
+            return result;
+        },
     },
 };
 </script>
@@ -1459,6 +1568,10 @@ export default {
     overflow-y: auto;
 }
 
+.input-panel /deep/ .el-card__header {
+    padding: 12px 20px 12px 20px;
+}
+
 .detail-header {
     font-weight: bold;
     color: #303133;
@@ -1476,7 +1589,7 @@ export default {
 }
 
 .input-section {
-    margin-bottom: 20px;
+    margin-bottom: 0;
 }
 
 .entityName-input-with-select {
