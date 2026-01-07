@@ -28,7 +28,7 @@
                                     readonly v-model="input.entityName" style="vertical-align: middle;"
                                     class="entityName-input-with-select">
                                     <el-select size="small" slot="prepend" clearable filterable
-                                        :loading="loading || entityOptionsLoading" v-model="input.entityName"
+                                        :disabled="loading || entityOptionsLoading" v-model="input.entityName"
                                         placeholder="请选择" :filter-method="entitySelectFilter">
                                         <el-option v-for="item in entityOptions" :key="item.key" :label="item.label"
                                             :value="item.key">
@@ -253,7 +253,7 @@ export default {
         // 实体名称不能为空
         const entityName_rule = (rule, value, callback) => {
             if (this.rtcrm.isNullOrWhiteSpace(value)) {
-                callback(new Error("实体名称不能为空不能为空！"));
+                callback(new Error("实体名称不能为空！"));
             } else {
                 callback();
             }
@@ -517,15 +517,6 @@ export default {
             });
         },
 
-        //获取环境的Label
-        GetEnvirLabel: function (val) {
-            let obj = { label: "无效环境请刷新", key: "undefined" };
-            let _obj = this.environments.find((item) => {
-                return item.key === val;
-            });
-            return !this.rtcrm.isNull(_obj) ? _obj : obj;
-        },
-
         //envirFrom下拉Change事件
         envirFromChange: function () {
             //重新获取实体名称
@@ -544,14 +535,13 @@ export default {
         //实体名称下拉搜索事件
         entitySelectFilter(val) {
             if (val) {
+                // 优化：提前转换搜索关键词，避免重复操作，使用 includes 替代 indexOf
+                const searchVal = val.toLowerCase();
                 this.entityOptions = this.entityOptionsCopy.filter((item) => {
-                    if (!!~item.label.indexOf(val) || !!~item.label.toUpperCase().indexOf(val.toUpperCase())) {
-                        return true
-                    }
-                    else if (!!~item.key.indexOf(val) || !!~item.key.toUpperCase().indexOf(val.toUpperCase())) {
-                        return true
-                    }
-                })
+                    const labelLower = (item.label || '').toLowerCase();
+                    const keyLower = (item.key || '').toLowerCase();
+                    return labelLower.includes(searchVal) || keyLower.includes(searchVal);
+                });
             } else {
                 this.entityOptions = this.entityOptionsCopy;
             }
@@ -563,9 +553,12 @@ export default {
 
             // 关键字过滤
             if (!this.rtcrm.isNullOrWhiteSpace(val)) {
+                // 优化：使用 includes 替代 indexOf !== -1，提前转换搜索关键词
+                const searchVal = val.toLowerCase();
                 filteredData = filteredData.filter(item => {
-                    return item.logicalName.indexOf(val) !== -1 ||
-                        item.displayName.indexOf(val) !== -1;
+                    const logicalName = (item.logicalName || '').toLowerCase();
+                    const displayName = (item.displayName || '').toLowerCase();
+                    return logicalName.includes(searchVal) || displayName.includes(searchVal);
                 });
             }
 
@@ -583,16 +576,45 @@ export default {
 
         //复制到剪贴板
         copyToClipboard(val) {
-            var textarea = document.createElement('textarea');
+            // 优化：使用现代 Clipboard API，替代已废弃的 document.execCommand
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                // 使用现代 Clipboard API
+                navigator.clipboard.writeText(val)
+                    .then(() => {
+                        this.showMessage("复制成功", "success");
+                    })
+                    .catch((err) => {
+                        console.error("复制失败:", err);
+                        // 降级到传统方法
+                        this.fallbackCopyToClipboard(val);
+                    });
+            } else {
+                // 降级到传统方法（兼容旧浏览器）
+                this.fallbackCopyToClipboard(val);
+            }
+        },
+
+        // 降级复制方法（兼容旧浏览器）
+        fallbackCopyToClipboard(val) {
+            const textarea = document.createElement('textarea');
             textarea.style.position = 'fixed';
-            textarea.style.opacity = 0;
+            textarea.style.opacity = '0';
             textarea.value = val;
             document.body.appendChild(textarea);
             textarea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textarea);
-
-            this.showMessage("复制成功", "success");
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    this.showMessage("复制成功", "success");
+                } else {
+                    this.showMessage("复制失败，请手动复制", "error");
+                }
+            } catch (err) {
+                console.error("复制失败:", err);
+                this.showMessage("复制失败，请手动复制", "error");
+            } finally {
+                document.body.removeChild(textarea);
+            }
         },
 
         //处理行点击事件
@@ -612,12 +634,8 @@ export default {
                 5: ['Memo', 'String']                          // String
             };
 
-            // 通过映射关系匹配
-            if (typeMapping[selectedType] && typeMapping[selectedType].includes(actualType)) {
-                return true;
-            }
-
-            return false;
+            // 优化：直接返回布尔表达式，简化代码
+            return typeMapping[selectedType] && typeMapping[selectedType].includes(actualType);
         },
 
         //字段类型变化处理方法
