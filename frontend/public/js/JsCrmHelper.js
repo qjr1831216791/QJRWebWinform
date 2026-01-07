@@ -278,9 +278,35 @@ JsCrm.webApi = {
                 // 处理各种错误情况
                 if (error.response) {
                     // HTTP 错误响应（4xx, 5xx）
-                    // 优先使用 response.data，如果没有则使用 response.statusText
-                    const errorData = error.response.data || error.response.statusText || '请求失败';
-                    reject(errorData);
+                    const errorData = error.response.data;
+                    let errorMessage = '请求失败';
+
+                    if (errorData) {
+                        // 如果 errorData 是对象，尝试提取错误消息
+                        if (typeof errorData === 'object') {
+                            // 优先使用 ExceptionMessage（最详细的错误信息）
+                            // 然后是 Message，最后是 message
+                            errorMessage = errorData.ExceptionMessage ||
+                                errorData.Message ||
+                                errorData.message ||
+                                error.response.statusText ||
+                                '请求失败';
+                        } else if (typeof errorData === 'string') {
+                            // 如果是字符串，直接使用
+                            errorMessage = errorData;
+                        }
+                    } else {
+                        // 如果没有 errorData，使用 statusText
+                        errorMessage = error.response.statusText || '请求失败';
+                    }
+
+                    // 统一 reject 一个包含 message 属性的对象，确保调用方可以通过 err.message 获取
+                    reject({
+                        message: errorMessage,
+                        response: error.response,
+                        status: error.response.status,
+                        statusText: error.response.statusText
+                    });
                 } else if (error.request) {
                     // 请求已发出但没有收到响应（网络错误）
                     reject({
@@ -340,9 +366,35 @@ JsCrm.webApi = {
                 // 处理各种错误情况
                 if (error.response) {
                     // HTTP 错误响应（4xx, 5xx）
-                    // 优先使用 response.data，如果没有则使用 response.statusText
-                    const errorData = error.response.data || error.response.statusText || '请求失败';
-                    reject(errorData);
+                    const errorData = error.response.data;
+                    let errorMessage = '请求失败';
+
+                    if (errorData) {
+                        // 如果 errorData 是对象，尝试提取错误消息
+                        if (typeof errorData === 'object') {
+                            // 优先使用 ExceptionMessage（最详细的错误信息）
+                            // 然后是 Message，最后是 message
+                            errorMessage = errorData.ExceptionMessage ||
+                                errorData.Message ||
+                                errorData.message ||
+                                error.response.statusText ||
+                                '请求失败';
+                        } else if (typeof errorData === 'string') {
+                            // 如果是字符串，直接使用
+                            errorMessage = errorData;
+                        }
+                    } else {
+                        // 如果没有 errorData，使用 statusText
+                        errorMessage = error.response.statusText || '请求失败';
+                    }
+
+                    // 统一 reject 一个包含 message 属性的对象，确保调用方可以通过 err.message 获取
+                    reject({
+                        message: errorMessage,
+                        response: error.response,
+                        status: error.response.status,
+                        statusText: error.response.statusText
+                    });
                 } else if (error.request) {
                     // 请求已发出但没有收到响应（网络错误）
                     reject({
@@ -704,20 +756,33 @@ JsCrm.webApi = {
                 actionPara = JSON.parse(actionPara);
             }
         }
-        var resp = await this.ApiPost(apiName, actionPara, isDataSubmit);
-        if (resp) {
-            if (resp && resp.isSuccess) {
-                return resp;
-            } else if (resp && !resp.isSuccess) {
-                if (resp.message) {
-                    console.error(resp.message);
+        try {
+            var resp = await this.ApiPost(apiName, actionPara, isDataSubmit);
+            if (resp) {
+                if (resp && resp.isSuccess) {
+                    return resp;
+                } else if (resp && !resp.isSuccess) {
+                    if (resp.message) {
+                        console.error(resp.message);
+                    }
+                    throw new Error(resp.message || '请求失败');
+                } else {
+                    throw new Error('HiddenApi response error.');
                 }
-                throw new Error(resp.message);
+            }
+            throw new Error('HiddenApi response error.');
+        } catch (error) {
+            // 如果 ApiPost reject 的是一个包含 message 属性的对象，提取 message
+            // 如果是 Error 对象，直接抛出
+            // 如果是其他类型，转换为 Error
+            if (error && typeof error === 'object' && error.message) {
+                throw new Error(error.message);
+            } else if (error instanceof Error) {
+                throw error;
             } else {
-                throw new Error('HiddenApi response error.');
+                throw new Error(error && error.toString ? error.toString() : '请求失败');
             }
         }
-        throw new Error('HiddenApi response error.');
     },
 
     invokeHiddenApiAsync: async function (hostWorkflow, apiName, actionPara) {
