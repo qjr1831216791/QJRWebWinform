@@ -536,6 +536,7 @@ export default {
                     );
                   }
                 }
+                this.handleTableFilter(true);//重新过滤表格数据
               } else {
                 this.jshelper.openAlertDialog(this, res.message, "系统配置查询");
               }
@@ -789,10 +790,13 @@ export default {
     },
 
     //表格过滤方法
-    handleTableFilter: function () {
+    handleTableFilter: function (isFilterAgain) {
+      isFilterAgain = this.rtcrm.isNull(isFilterAgain) ? false : isFilterAgain;
+      if (isFilterAgain) {
+        this.$set(this, "lastFilterText", "");
+      }
       this.filterTableData();
     },
-
 
     //过滤表格数据
     filterTableData: function () {
