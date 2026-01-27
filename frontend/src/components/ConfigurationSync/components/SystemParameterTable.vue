@@ -21,6 +21,17 @@
                         </el-table-column>
                         <!-- Value -->
                         <el-table-column prop="new_value" label="Value" show-overflow-tooltip width="180">
+                            <template slot-scope="scope">
+                                <div class="text-content text-ellipsis">
+                                    <div class="text-inner text-ellipsis">
+                                        <span>{{ scope.row.new_value }}</span>
+                                    </div>
+                                    <i v-show="!rtcrm.isNullOrWhiteSpace(scope.row.new_value)"
+                                        class="el-icon-copy-document text-icon"
+                                        style="cursor: pointer;" title="复制"
+                                        @click="copyToClipboard(scope.row.new_value)"></i>
+                                </div>
+                            </template>
                         </el-table-column>
                         <!-- 描述 -->
                         <el-table-column prop="new_desc" label="描述" show-overflow-tooltip width="250">
@@ -47,6 +58,17 @@
                         </el-table-column>
                         <!-- Value -->
                         <el-table-column prop="new_value" label="Value" show-overflow-tooltip width="180">
+                            <template slot-scope="scope">
+                                <div class="text-content text-ellipsis">
+                                    <div class="text-inner text-ellipsis">
+                                        <span>{{ scope.row.new_value }}</span>
+                                    </div>
+                                    <i v-show="!rtcrm.isNullOrWhiteSpace(scope.row.new_value)"
+                                        class="el-icon-copy-document text-icon"
+                                        style="cursor: pointer;" title="复制"
+                                        @click="copyToClipboard(scope.row.new_value)"></i>
+                                </div>
+                            </template>
                         </el-table-column>
                         <!-- 描述 -->
                         <el-table-column prop="new_desc" label="描述" show-overflow-tooltip width="250">
@@ -98,6 +120,51 @@ export default {
         handleSelectionChange(val) {
             this.$emit('handle-selection-change', val);
         },
+        //showMessage
+        showMessage(message, type, dangerouslyUseHTMLString = false) {
+            this.$message({
+                message: message,
+                dangerouslyUseHTMLString: dangerouslyUseHTMLString,
+                type: type,
+            });
+        },
+        //复制到剪贴板
+        copyToClipboard(val) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(val)
+                    .then(() => {
+                        this.showMessage("复制成功", "success");
+                    })
+                    .catch((err) => {
+                        console.error("复制失败:", err);
+                        this.fallbackCopyToClipboard(val);
+                    });
+            } else {
+                this.fallbackCopyToClipboard(val);
+            }
+        },
+        // 降级复制方法（兼容旧浏览器）
+        fallbackCopyToClipboard(val) {
+            const textarea = document.createElement('textarea');
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            textarea.value = val;
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    this.showMessage("复制成功", "success");
+                } else {
+                    this.showMessage("复制失败，请手动复制", "error");
+                }
+            } catch (err) {
+                console.error("复制失败:", err);
+                this.showMessage("复制失败，请手动复制", "error");
+            } finally {
+                document.body.removeChild(textarea);
+            }
+        },
     },
 };
 </script>
@@ -115,5 +182,31 @@ export default {
 
 .box-card {
     width: 100%;
+}
+
+.text-content {
+    position: relative;
+    width: 100%;
+}
+
+.text-ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.text-inner {
+    display: inline-block;
+    width: calc(95% - 20px);
+}
+
+.text-icon {
+    width: 4%;
+    text-align: right;
+    vertical-align: super;
+}
+
+.text-icon:hover {
+    color: #409EFF;
 }
 </style>
