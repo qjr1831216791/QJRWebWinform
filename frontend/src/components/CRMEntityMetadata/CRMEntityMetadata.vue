@@ -192,9 +192,16 @@
                                                         <span>{{ selectedRow.displayName || '无' }}</span>
                                                     </div>
                                                 </div>
-                                                <div v-else-if="['Picklist', 'Status', 'State', 'MultiSelectPicklist'].includes(selectedRow.attributeType)"
+                                                <div v-else-if="isPicklistType(selectedRow.attributeType)"
                                                     class="detail-content">
-                                                    <!-- Picklist类型 -->
+                                                    <!-- Picklist类型：按钮置顶便于无需滚动即可看到 -->
+                                                    <div class="detail-item">
+                                                        <el-button size="mini" type="primary" plain
+                                                            :disabled="rtcrm.isNullOrWhiteSpace(selectedRow.optionsStr)"
+                                                            @click="generateCSharpEnum">
+                                                            生成 C# 枚举
+                                                        </el-button>
+                                                    </div>
                                                     <div class="detail-item">
                                                         <label>选项值:</label>
                                                         <div class="text-content text-ellipsis"
@@ -622,6 +629,13 @@ export default {
             this.selectedRow = row;
         },
 
+        /** 是否为 Picklist 一族（用于模板显示与生成枚举），兼容后端返回带空格或大小写差异 */
+        isPicklistType(attributeType) {
+            if (attributeType == null) return false;
+            const t = String(attributeType).trim();
+            return ['Picklist', 'Status', 'State', 'MultiSelectPicklist'].includes(t);
+        },
+
         //字段类型匹配方法
         matchFieldType(actualType, selectedType) {
             // 字段类型映射关系 - 使用数字键对应getFieldOptions返回的key值
@@ -642,6 +656,102 @@ export default {
         onFieldTypeChange() {
             // 触发数据过滤
             this.dataSearchOnChange(this.input.search);
+        },
+
+        /**
+         * 解析 Picklist 选项，返回 { value, label } 数组（按 value 升序）。
+         * 支持后端 optionsStr 格式："显示名=值；显示名=值"（全角分号）或 options 对象。
+         */
+        parsePicklistOptions(row) {
+            if (!row) return [];
+            // 优先使用 options 对象（API 返回的 Dictionary<int, string> 序列化为 { "1": "成品", ... }）
+            const optionsObj = row.options;
+            if (optionsObj && typeof optionsObj === 'object' && !Array.isArray(optionsObj)) {
+                const entries = Object.keys(optionsObj)
+                    .map((k) => ({ value: parseInt(k, 10), label: (optionsObj[k] || '').trim() }))
+                    .filter((e) => !isNaN(e.value));
+                entries.sort((a, b) => a.value - b.value);
+                return entries;
+            }
+            const str = row.optionsStr;
+            if (this.rtcrm.isNullOrWhiteSpace(str)) return [];
+            // 解析 "显示名=值；显示名=值" 或 "显示名=值;显示名=值"
+            const parts = str.split(/[；;]/).map((s) => s.trim()).filter(Boolean);
+            const result = [];
+            for (const part of parts) {
+                const eqIdx = part.indexOf('=');
+                if (eqIdx === -1) continue;
+                const label = part.substring(0, eqIdx).trim();
+                const value = parseInt(part.substring(eqIdx + 1).trim(), 10);
+                if (!isNaN(value)) result.push({ value, label });
+            }
+            result.sort((a, b) => a.value - b.value);
+            return result;
+        },
+
+        /**
+         * 对 C# XML 文档注释（如 summary）内容做转义，避免 <、>、& 等破坏注释结构。
+         */
+        escapeXmlForSummary(text) {
+            if (text == null || text === '') return '';
+            const s = String(text);
+            return s
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&apos;');
+        },
+
+        /**
+         * 将 C# 枚举成员名中的非法字符替换为合法标识符（空格改为下划线，数字开头加下划线前缀）。
+         */
+        toCSharpEnumMemberName(label) {
+            if (label == null || label === '') return 'Unknown';
+            let name = String(label).trim().replace(/\s+/g, '_');
+            if (/^\d/.test(name)) name = '_' + name;
+            return name || 'Unknown';
+        },
+
+        /**
+         * 根据当前选中的 Picklist 行生成 C# 枚举声明文本并复制到剪贴板。
+         * 枚举名：{实体逻辑名}_Enum_{字段逻辑名}，注释为实体显示名 + 字段显示名。
+         */
+        generateCSharpEnum() {
+            const row = this.selectedRow;
+            if (!row || !this.isPicklistType(row.attributeType)) {
+                this.showMessage('请先选择 Picklist/Status/State/MultiSelectPicklist 类型的字段', 'warning');
+                return;
+            }
+            const options = this.parsePicklistOptions(row);
+            if (options.length === 0) {
+                this.showMessage('当前字段无选项值，无法生成枚举', 'warning');
+                return;
+            }
+            const entityLogicalName = (this.input.entityName || '').trim().replace(/-/g, '_');
+            const attributeLogicalName = (row.logicalName || '').trim().replace(/-/g, '_');
+            const entityDisplayName = (this.entityOptions.find((e) => e.key === this.input.entityName) || {}).label || this.input.entityName || '';
+            const attributeDisplayName = row.displayName || row.logicalName || '';
+            const enumName = entityLogicalName + '_Enum_' + attributeLogicalName;
+            const summaryComment = (entityDisplayName && attributeDisplayName)
+                ? entityDisplayName + ': ' + attributeDisplayName
+                : attributeDisplayName || enumName;
+
+            const lines = [];
+            lines.push('/// <summary>' + this.escapeXmlForSummary(summaryComment) + '</summary>');
+            lines.push('public enum ' + enumName);
+            lines.push('{');
+            options.forEach((opt, idx) => {
+                const memberName = this.toCSharpEnumMemberName(opt.label);
+                const summary = '/// <summary>' + this.escapeXmlForSummary(opt.label || memberName) + '</summary>';
+                const member = memberName + ' = ' + opt.value + (idx < options.length - 1 ? ',' : '');
+                lines.push('    ' + summary);
+                lines.push('    ' + member);
+            });
+            lines.push('}');
+
+            const text = lines.join('\r\n');
+            this.copyToClipboard(text);
         },
     },
 };
