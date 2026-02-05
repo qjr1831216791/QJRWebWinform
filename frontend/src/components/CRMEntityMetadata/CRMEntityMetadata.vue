@@ -738,14 +738,19 @@ export default {
                 : attributeDisplayName || enumName;
 
             const lines = [];
-            lines.push('/// <summary>' + this.escapeXmlForSummary(summaryComment) + '</summary>');
+            // 枚举级 Summary：多行格式与现有代码风格一致
+            lines.push('/// <summary>');
+            lines.push('/// ' + this.escapeXmlForSummary(summaryComment));
+            lines.push('/// </summary>');
             lines.push('public enum ' + enumName);
             lines.push('{');
             options.forEach((opt, idx) => {
                 const memberName = this.toCSharpEnumMemberName(opt.label);
-                const summary = '/// <summary>' + this.escapeXmlForSummary(opt.label || memberName) + '</summary>';
+                const memberSummaryText = this.escapeXmlForSummary(opt.label || memberName);
                 const member = memberName + ' = ' + opt.value + (idx < options.length - 1 ? ',' : '');
-                lines.push('    ' + summary);
+                lines.push('    /// <summary>');
+                lines.push('    /// ' + memberSummaryText);
+                lines.push('    /// </summary>');
                 lines.push('    ' + member);
             });
             lines.push('}');
