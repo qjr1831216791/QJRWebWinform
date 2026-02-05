@@ -145,7 +145,7 @@
                                                 <div class="detail-item">
                                                     <label>执行时间：</label>
                                                     <span>{{ selectedRow.createdonFormatted || selectedRow.createdon
-                                                    }}</span>
+                                                        }}</span>
                                                 </div>
                                                 <div class="detail-item">
                                                     <label>执行时长：</label>
@@ -226,6 +226,19 @@ export default {
             // 日期选择器快捷选项
             pickerOptions: {
                 shortcuts: [
+                    {
+                        text: '最近十分钟',
+                        onClick(picker) {
+                            const end = new Date();
+                            const start = new Date();
+                            start.setTime(end.getTime() - 10 * 60 * 1000); // 减去10分钟
+                            end.setTime(end.getTime() + 3 * 60 * 1000); // 结束时间往后推3分钟，以覆盖异步队列写入延迟
+                            start.setSeconds(0, 0);
+                            end.setSeconds(59, 999);
+                            picker.$emit('pick', [start, end]);
+                        },
+
+                    },
                     {
                         text: '最近一小时',
                         onClick(picker) {
