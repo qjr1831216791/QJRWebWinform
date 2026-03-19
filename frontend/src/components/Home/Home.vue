@@ -124,6 +124,9 @@ export default {
         GetCRMEnvironments: function () {
             let _this = this;
             const apiMode = this.jshelper._getApiMode();
+            // 迁移后的统一初始化链路：
+            // BaseData/GetCRMEnvironments -> 选择默认环境 -> CRMLogin/Login ->
+            // SyncConfiguration/GetEnvironments -> 下发 environment-change。
             if (apiMode === 'nativehost') {
                 this.jshelper.invokeHiddenApiAsync("new_hbxn_common", "BaseData/GetCRMEnvironments", null).then((resp) => {
                     if (resp && resp.isSuccess) {

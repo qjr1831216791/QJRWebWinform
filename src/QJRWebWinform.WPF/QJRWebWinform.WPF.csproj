@@ -67,6 +67,9 @@
       <SubType>code</SubType>
     </Compile>
     <Compile Include="CefSharpHost.cs" />
+    <Compile Include="Controllers\APITestController.cs" />
+    <Compile Include="Controllers\BaseDataController.cs" />
+    <Compile Include="Controllers\CRMLoginController.cs" />
     <Compile Include="Controllers\DefaultController.cs" />
     <Compile Include="Controllers\DynamicControllerBase.cs" />
     <Compile Include="Controllers\HolidayController.cs" />
