@@ -126,13 +126,13 @@ namespace APIService
             {
                 Log.ErrorMsg("OrganizationService Initialize");
                 Log.LogException(ex);
-                throw;
+                throw new Exception($"OrganizationService Initialize Error!");
             }
             catch (Exception ex)
             {
                 Log.ErrorMsg("OrganizationService Initialize");
                 Log.LogException(ex);
-                throw;
+                throw new Exception($"OrganizationService Initialize Error!");
             }
         }
 
@@ -170,14 +170,17 @@ namespace APIService
                     else
                         throw new InvalidPluginExecutionException($"组织服务envirToService生成失败");
                 }
-                else
+                else if (OrganizationServiceAdmin != null)
                 {
                     envirFromSP = QueryHelper.GetSystemParameter(OrganizationServiceAdmin, $"SyncConfig.connetionString.{envirFrom}");
                     envirToSP = QueryHelper.GetSystemParameter(OrganizationServiceAdmin, $"SyncConfig.connetionString.{envirTo}");
                 }
 
-                envirFromSP = EncryptionHelper.DESDecryption(envirFromSP);
-                envirToSP = EncryptionHelper.DESDecryption(envirToSP);
+                if (!string.IsNullOrWhiteSpace(envirToSP))
+                    envirFromSP = EncryptionHelper.DESDecryption(envirFromSP);
+
+                if (!string.IsNullOrWhiteSpace(envirFromSP))
+                    envirToSP = EncryptionHelper.DESDecryption(envirToSP);
 
                 if (!string.IsNullOrWhiteSpace(envirToSP))
                     envirToService = new CrmServiceHelper(envirToSP).OrganizationService;
@@ -192,13 +195,13 @@ namespace APIService
             {
                 Log.ErrorMsg("CreateCrmServicMulti");
                 Log.LogException(ex);
-                throw ex;
+                throw new InvalidPluginExecutionException($"组织服务生成失败");
             }
             catch (Exception ex)
             {
                 Log.ErrorMsg("CreateCrmServicMulti");
                 Log.LogException(ex);
-                throw ex;
+                throw new InvalidPluginExecutionException($"组织服务生成失败");
             }
         }
 
@@ -235,19 +238,19 @@ namespace APIService
                 if (!string.IsNullOrWhiteSpace(envirFromSP))
                     envirFromService = new CrmServiceHelper(envirFromSP).OrganizationService;
 
-                if (envirFromService == null) throw new InvalidPluginExecutionException($"组织服务envirFromService生成失败");
+                if (envirFromService == null) throw new InvalidPluginExecutionException($"组织服务生成失败");
             }
             catch (CryptographicException ex)
             {
                 Log.ErrorMsg("CreateCrmServic");
                 Log.LogException(ex);
-                throw ex;
+                throw new InvalidPluginExecutionException($"组织服务生成失败");
             }
             catch (Exception ex)
             {
                 Log.ErrorMsg("CreateCrmServic");
                 Log.LogException(ex);
-                throw ex;
+                throw new InvalidPluginExecutionException($"组织服务生成失败");
             }
         }
 

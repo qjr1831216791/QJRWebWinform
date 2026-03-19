@@ -203,7 +203,10 @@
     <Compile Include="Areas\HelpPage\SampleGeneration\SampleDirection.cs" />
     <Compile Include="Areas\HelpPage\SampleGeneration\TextSample.cs" />
     <Compile Include="Areas\HelpPage\XmlDocumentationProvider.cs" />
+    <Compile Include="Controllers\APITestController.cs" />
     <Compile Include="Controllers\BaseController.cs" />
+    <Compile Include="Controllers\BaseDataController.cs" />
+    <Compile Include="Controllers\CRMLoginController.cs" />
     <Compile Include="Controllers\DefaultController.cs" />
     <Compile Include="Controllers\HolidayController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
@@ -430,7 +433,7 @@
     <!-- 复制所有文件，不使用 SkipUnchangedFiles 以确保文件始终更新 -->
     <Copy SourceFiles="@(BaseDataFiles)" DestinationFiles="@(BaseDataFiles->'$(OutDir)BaseData\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="false" ContinueOnError="true" />
     <Copy SourceFiles="@(ConfigFiles)" DestinationFiles="@(ConfigFiles->'$(OutDir)Config\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="false" ContinueOnError="true" />
-    <Message Text="Copied @(BaseDataFiles->Count()) BaseData files and @(ConfigFiles->Count()) Config files to output directory" Importance="normal" />
+    <Message Text="Copied @(BaseDataFiles-&gt;Count()) BaseData files and @(ConfigFiles-&gt;Count()) Config files to output directory" Importance="normal" />
   </Target>
   <!-- 在清理时也删除输出目录中的 BaseData 和 Config -->
   <Target Name="CleanSharedDataFiles" AfterTargets="Clean">

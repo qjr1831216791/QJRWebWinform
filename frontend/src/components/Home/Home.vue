@@ -114,6 +114,9 @@ export default {
             let route = this.rootPath + "/" + this.componentsMapPath[menu.componentName];
             this.$router.push({ path: route }, () => {
                 this.getCurrentComponent();
+                this.$nextTick(() => {
+                    this.syncEnvironmentToChild();
+                });
             });
         },
 
@@ -122,60 +125,121 @@ export default {
             let _this = this;
             const apiMode = this.jshelper._getApiMode();
             if (apiMode === 'nativehost') {
-                this.jshelper.invokeHiddenApiAsync("new_hbxn_common", "Default/GetCRMEnvironments", null).then((resp) => {
+                this.jshelper.invokeHiddenApiAsync("new_hbxn_common", "BaseData/GetCRMEnvironments", null).then((resp) => {
                     if (resp && resp.isSuccess) {
                         this.$set(_this, "environments", resp.data);
                         if (resp.data != null && resp.data.length > 0) {
                             this.$set(this, "selectEnvironment", resp.data[0].value);
-                            this.environmentSelectChange(this.selectEnvironment);
+                            return this.environmentSelectChange(this.selectEnvironment);
                         }
                     }
-
+                    return null;
+                }).then(() => {
                     this.$set(this, "showMain", true);
                     setTimeout(() => {
                         this.$set(this, "showSelf", false);
                     }, 1000);
+                    this.$nextTick(() => {
+                        this.syncEnvironmentToChild();
+                    });
                 }).catch((err) => {
-                    this.jshelper.openAlertDialog(this, err.message, "获取CRM环境列表");
+                    this.jshelper.openAlertDialog(this, err.message, "初始化CRM环境");
                 }).finally(() => {
                     this.jshelper.closeLoading();
                 });
             }
             else {
-                this.jshelper.ApiGet("Default/GetCRMEnvironments").then((resp) => {
+                this.jshelper.ApiGet("BaseData/GetCRMEnvironments").then((resp) => {
                     if (resp && resp.isSuccess) {
                         this.$set(_this, "environments", resp.data);
                         if (resp.data != null && resp.data.length > 0) {
                             this.$set(this, "selectEnvironment", resp.data[0].value);
-                            this.environmentSelectChange(this.selectEnvironment);
+                            return this.environmentSelectChange(this.selectEnvironment);
                         }
                     }
-
+                    return null;
+                }).then(() => {
                     this.$set(this, "showMain", true);
                     setTimeout(() => {
                         this.$set(this, "showSelf", false);
                     }, 1000);
+                    this.$nextTick(() => {
+                        this.syncEnvironmentToChild();
+                    });
                 }).catch((err) => {
-                    this.jshelper.openAlertDialog(this, err.message, "获取CRM环境列表");
+                    this.jshelper.openAlertDialog(this, err.message, "初始化CRM环境");
                 }).finally(() => {
                     this.jshelper.closeLoading();
                 });
             }
         },
 
-        //环境选择器OnChange
-        environmentSelectChange: function (value) {
-            let tips = `当前CRM环境为：${value}`;
-            console.log(tips);
-            this.showMessage(tips, "success");
+        //使用当前选中环境初始化CRM连接
+        LoginByEnvironment: function () {
+            const apiMode = this.jshelper._getApiMode();
+            if (apiMode === 'nativehost') {
+                return this.jshelper.invokeHiddenApiAsync("new_hbxn_common", "CRMLogin/Login", null);
+            }
+            return this.jshelper.ApiGet("CRMLogin/Login");
+        },
+
+        //登录成功后获取子页面使用的环境参数（保持与原逻辑一致）
+        GetSyncEnvironments: function () {
+            return this.jshelper.invokeHiddenApiAsync("new_hbxn_common", "SyncConfiguration/GetEnvironments", null)
+                .then((res) => {
+                    if (this.rtcrm.isNull(res) || !res.isSuccess || this.rtcrm.isNull(res.data)) {
+                        throw new Error((res && res.message) || "获取环境参数失败");
+                    }
+                    return res.data;
+                });
+        },
+
+        //将当前环境上下文同步到当前子页面
+        syncEnvironmentToChild: function () {
+            if (!this.$refs.mainComponent) return;
+            if (!this.selectEnvironment) return;
+
+            const syncEnvironments = (this.$globalVar && this.$globalVar["environments"]) || [];
+            this.$refs.mainComponent.$emit("environment-change", {
+                envir: this.selectEnvironment,
+                environments: syncEnvironments
+            });
+        },
+
+        //环境选择器OnChange：先Login，再广播环境切换事件
+        environmentSelectChange: async function (value) {
+            console.log(`当前CRM环境为：${value}`);
 
             if (!this.$globalVar) this.$globalVar = {};
 
             this.$globalVar["selectEnv"] = value;
 
-            //通知子组件环境切换
-            if (this.$refs.mainComponent)
-                this.$refs.mainComponent.$emit("environment-change", value);
+            try {
+                this.showMessage("CRM环境登录中...", "info");
+                const loginResult = await this.LoginByEnvironment();
+                if (loginResult === false || (loginResult && loginResult.isSuccess === false)) {
+                    const failMessage = (loginResult && (loginResult.message || loginResult.Message)) || "返回 false";
+                    throw new Error(failMessage);
+                }
+                this.showMessage("CRM环境登录成功", "success");
+            } catch (err) {
+                const errMsg = (err && err.message) ? err.message : "未知异常";
+                this.jshelper.openAlertDialog(this, `CRM登录失败：${errMsg}`, "初始化CRM环境");
+                throw new Error(`CRM登录失败：${errMsg}`);
+            }
+
+            let syncEnvironments = [];
+            try {
+                syncEnvironments = await this.GetSyncEnvironments();
+            } catch (err) {
+                this.jshelper.openAlertDialog(this, err.message || "获取环境参数失败", "初始化CRM环境");
+                throw err;
+            }
+
+            this.$globalVar["environments"] = syncEnvironments;
+
+            //通知子组件环境切换（附带环境列表）
+            this.syncEnvironmentToChild();
         },
 
         //showMessage

@@ -51,7 +51,7 @@ export default {
             this.jshelper.showLoading();
             const apiMode = this.jshelper._getApiMode();
             if (apiMode === 'nativehost') {
-                this.jshelper.invokeHiddenApiAsync("new_hbxn_common", "Default/TestAPIRun", null).then((resp) => {
+                this.jshelper.invokeHiddenApiAsync("new_hbxn_common", "APITest/TestAPIRun", null).then((resp) => {
                     this.$set(this, "testResult", JSON.stringify(resp));
                 }).catch(e => {
                     this.$set(this, "testResult", JSON.stringify(e));
@@ -60,7 +60,7 @@ export default {
                 });
             }
             else {
-                this.jshelper.ApiGet("Default/TestAPIRun").then((resp) => {
+                this.jshelper.ApiGet("APITest/TestAPIRun").then((resp) => {
                     this.$set(this, "testResult", JSON.stringify(resp));
                 }).catch(e => {
                     this.$set(this, "testResult", JSON.stringify(e));
@@ -74,7 +74,7 @@ export default {
             this.jshelper.showLoading();
             const apiMode = this.jshelper._getApiMode();
             if (apiMode === 'nativehost') {
-                this.jshelper.invokeHiddenApiAsync("new_hbxn_common", "Default/TestCRMService", null).then((resp) => {
+                this.jshelper.invokeHiddenApiAsync("new_hbxn_common", "APITest/TestCRMService", null).then((resp) => {
                     this.$set(this, "testResult", JSON.stringify(resp));
                 }).catch(e => {
                     this.$set(this, "testResult", JSON.stringify(e));
@@ -83,7 +83,7 @@ export default {
                 });
             }
             else {
-                this.jshelper.ApiGet("Default/TestCRMService").then((resp) => {
+                this.jshelper.ApiGet("APITest/TestCRMService").then((resp) => {
                     this.$set(this, "testResult", JSON.stringify(resp));
                 }).catch(e => {
                     this.$set(this, "testResult", JSON.stringify(e));
@@ -98,7 +98,7 @@ export default {
             let input = {
                 input: "Hello World",
             };
-            this.jshelper.ApiPost("Default/TestAPIPost3", input).then((resp) => {
+            this.jshelper.ApiPost("APITest/TestAPIPost3", input).then((resp) => {
                 this.$set(this, "testResult", JSON.stringify(resp));
             }).catch(e => {
                 this.$set(this, "testResult", JSON.stringify(e));

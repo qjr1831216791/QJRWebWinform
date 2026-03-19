@@ -299,9 +299,6 @@ export default {
         };
     },
     created() {
-        //获取系统参数
-        this.getEnvironments();
-
         //获取实体名称
         this.getEntityOptions();
 
@@ -328,7 +325,14 @@ export default {
     },
     methods: {
         //环境切换事件
-        environmentChange: function (envir) {
+        environmentChange: function (payload) {
+            let envir = payload;
+            if (payload && typeof payload === "object") {
+                envir = payload.envir;
+                if (!this.rtcrm.isNull(payload.environments)) {
+                    this.$set(this, "environments", payload.environments);
+                }
+            }
             if (this.rtcrm.isNullOrWhiteSpace(envir)) return;
 
             //清空数据
@@ -343,43 +347,18 @@ export default {
             this.$set(this, "selectedRow", null); //清空选中的行
             this.$set(this, "tableKey", this.tableKey + 1); //刷新Table
 
-            //重新获取环境参数
-            this.getEnvironments();
-
             //重新获取实体名称
             this.getEntityOptions();
         },
 
         //获取环境参数
         getEnvironments: function () {
-            let _this = this;
-            this.$set(this, "loading", true);
-
-            this.jshelper
-                .invokeHiddenApiAsync(
-                    "new_hbxn_common",
-                    "SyncConfiguration/GetEnvironments",
-                    null
-                )
-                .then((res) => {
-                    _this.$set(_this, "loading", false);
-                    if (this.rtcrm.isNull(res) || this.rtcrm.isNull(res.data)) {
-                        this.jshelper.openAlertDialog(this,
-                            "返回数据为空", "获取环境参数"
-                        );
-                        return;
-                    }
-                    if (res.isSuccess) {
-                        let data = res.data;
-                        if (!this.rtcrm.isNull(data)) _this.$set(_this, "environments", data);
-                    } else {
-                        this.jshelper.openAlertDialog(this, res.message, "获取环境参数");
-                    }
-                })
-                .catch((err) => {
-                    _this.$set(_this, "loading", false);
-                    _this.jshelper.openAlertDialog(_this, err.message, "获取环境参数");
-                });
+            if (
+                this.$globalVar &&
+                !this.rtcrm.isNull(this.$globalVar.environments)
+            ) {
+                this.$set(this, "environments", this.$globalVar.environments);
+            }
         },
 
         //获取实体名称

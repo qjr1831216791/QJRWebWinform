@@ -6,6 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows;
+using APIService.APITest;
+using APIService.BaseData;
 
 namespace QJRWebWinform.WPF.Controllers
 {
@@ -71,7 +73,7 @@ namespace QJRWebWinform.WPF.Controllers
         private ResultModel TestCRMServiceCore(string parameters)
         {
             SetParameters(parameters);
-            return Command<DefaultCommand>().TestCRMService();
+            return Command<APITestCommand>().TestCRMService();
         }
 
         /// <summary>
@@ -114,7 +116,7 @@ namespace QJRWebWinform.WPF.Controllers
         {
             var input = DeserializeParameters<TestLogTraceInput>(parameters);
             SetParameters(parameters);
-            return Command<DefaultCommand>().TestLogTrace(input?.level, input?.message ?? "Hello World");
+            return Command<APITestCommand>().TestLogTrace(input?.level, input?.message ?? "Hello World");
         }
 
         /// <summary>
@@ -291,7 +293,7 @@ namespace QJRWebWinform.WPF.Controllers
         private ResultModel GetCRMEnvironmentsCore(string parameters)
         {
             SetParameters(parameters);
-            return Command<DefaultCommand>().GetCRMEnvironments();
+            return new BaseDataCommand().GetCRMEnvironments();
         }
 
         /// <summary>
@@ -317,11 +319,11 @@ namespace QJRWebWinform.WPF.Controllers
                 try
                 {
                     var result = GetCRMEnvironmentsCore(parameters);
-                    
+
                     // 将 ResultModel 序列化为 JSON 字符串
                     // 注意：异步 API 需要返回 JSON 字符串，前端会解析
                     var resultJson = JsonConvert.SerializeObject(result);
-                    
+
                     // 成功时调用回调：callback.ExecuteAsync(true, resultJson)
                     callback.ExecuteAsync(true, resultJson);
                 }
