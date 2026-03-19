@@ -1,11 +1,16 @@
 ﻿using CommonHelper;
 using CommonHelper.Model;
+using Microsoft.Crm.Sdk.Messages;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Messages;
 using Microsoft.Xrm.Sdk.Metadata;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Packaging;
 using System.Linq;
+using System.Text;
 
 namespace APIService.RetrieveEntityMetadata
 {
@@ -448,6 +453,85 @@ namespace APIService.RetrieveEntityMetadata
                 return _item;
             }
             return item;
+        }
+
+        /// <summary>
+        /// 查询指定实体的Ribbon信息
+        /// </summary>
+        /// <param name="OrganizationService"></param>
+        /// <param name="entityName"></param>
+        /// <returns></returns>
+        public ResultModel GetEntityRibbonMetadata(string OrganizationService, string entityName)
+        {
+            try
+            {
+                CreateCrmServic(OrganizationService, out IOrganizationService envirFromService);
+
+                return GetEntityRibbonMetadata(envirFromService, entityName);
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorMsg("GetAllEntityMetadata");
+                Log.LogException(ex);
+                throw ex;
+            }
+        }
+
+        /// <summary>
+        /// 查询指定实体的Ribbon信息
+        /// </summary>
+        /// <param name="OrganizationService"></param>
+        /// <param name="entityName"></param>
+        /// <returns></returns>
+        public ResultModel GetEntityRibbonMetadata(IOrganizationService OrganizationService, string entityName)
+        {
+            ResultModel result = new ResultModel();
+            try
+            {
+                if (string.IsNullOrWhiteSpace(entityName)) throw new InvalidPluginExecutionException("实体名称不能为空");
+
+                RetrieveEntityRibbonRequest req = new RetrieveEntityRibbonRequest()
+                {
+                    EntityName = entityName,
+                    RibbonLocationFilter = RibbonLocationFilters.All,
+                };
+                RetrieveEntityRibbonResponse res = (RetrieveEntityRibbonResponse)OrganizationService.Execute(req);
+                if (res == null) throw new InvalidPluginExecutionException("获取指定实体Ribbon元数据失败");
+
+                string ribbonXml = Encoding.UTF8.GetString(unzipRibbon(res.CompressedEntityXml));
+                result.Success(data: ribbonXml);
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorMsg("GetEntityRibbonMetadata");
+                Log.LogException(ex);
+                throw ex;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 解压缩
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        private byte[] unzipRibbon(byte[] data)
+        {
+            System.IO.Packaging.ZipPackage package = null;
+            MemoryStream memStream = null;
+
+            memStream = new MemoryStream();
+            memStream.Write(data, 0, data.Length);
+            package = (ZipPackage)ZipPackage.Open(memStream, FileMode.Open);
+
+            ZipPackagePart part = (ZipPackagePart)package.GetPart(new Uri("/RibbonXml.xml", UriKind.Relative));
+            using (Stream strm = part.GetStream())
+            {
+                long len = strm.Length;
+                byte[] buff = new byte[len];
+                strm.Read(buff, 0, (int)len);
+                return buff;
+            }
         }
     }
 }
