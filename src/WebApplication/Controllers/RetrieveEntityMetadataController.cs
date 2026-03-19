@@ -43,5 +43,17 @@ namespace WebApplication.Controllers
         {
             return Command<RetrieveEntityMetadataCommand>().GetAllAttributeMetadataFromEntity(envir, entityName, attributeType);
         }
+
+        /// <summary>
+        /// 查询指定实体的Ribbon信息
+        /// </summary>
+        /// <param name="envir"></param>
+        /// <param name="entityName"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public virtual ResultModel GetEntityRibbonMetadata(string envir, string entityName)
+        {
+            return Command<RetrieveEntityMetadataCommand>().GetEntityRibbonMetadata(envir, entityName);
+        }
     }
 }
