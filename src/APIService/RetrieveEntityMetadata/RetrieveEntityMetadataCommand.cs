@@ -473,7 +473,7 @@ namespace APIService.RetrieveEntityMetadata
             }
             catch (Exception ex)
             {
-                Log.ErrorMsg("GetAllEntityMetadata");
+                Log.ErrorMsg("GetEntityRibbonMetadata");
                 Log.LogException(ex);
                 throw ex;
             }
@@ -528,7 +528,7 @@ namespace APIService.RetrieveEntityMetadata
             }
             catch (Exception ex)
             {
-                Log.ErrorMsg("GetAllEntityMetadata");
+                Log.ErrorMsg("GetEntityRibbonDiffMetadata");
                 Log.LogException(ex);
                 throw ex;
             }
@@ -554,11 +554,11 @@ namespace APIService.RetrieveEntityMetadata
 
                 var ec = OrganizationServiceAdmin.RetrieveMultiple(qe);
 
-                result.Success(data: RibbonDiffMetadataFormat(ec));
+                result.Success(data: ec != null && ec.Entities.Any() ? ec.Entities.ToList() : null);
             }
             catch (Exception ex)
             {
-                Log.ErrorMsg("GetEntityRibbonMetadata");
+                Log.ErrorMsg("GetEntityRibbonDiffMetadata");
                 Log.LogException(ex);
                 throw ex;
             }
@@ -566,27 +566,52 @@ namespace APIService.RetrieveEntityMetadata
         }
 
         /// <summary>
-        /// 解压缩
+        /// 查询指定实体的Ribbon差异信息并格式化
         /// </summary>
-        /// <param name="data"></param>
+        /// <param name="OrganizationService"></param>
+        /// <param name="entityName"></param>
         /// <returns></returns>
-        private byte[] unzipRibbon(byte[] data)
+        public ResultModel GetEntityRibbonDiffMetadataFormated(string OrganizationService, string entityName)
         {
-            System.IO.Packaging.ZipPackage package = null;
-            MemoryStream memStream = null;
-
-            memStream = new MemoryStream();
-            memStream.Write(data, 0, data.Length);
-            package = (ZipPackage)ZipPackage.Open(memStream, FileMode.Open);
-
-            ZipPackagePart part = (ZipPackagePart)package.GetPart(new Uri("/RibbonXml.xml", UriKind.Relative));
-            using (Stream strm = part.GetStream())
+            try
             {
-                long len = strm.Length;
-                byte[] buff = new byte[len];
-                strm.Read(buff, 0, (int)len);
-                return buff;
+                CreateCrmServic(OrganizationService, out IOrganizationService envirFromService);
+
+                return GetEntityRibbonDiffMetadataFormated(envirFromService, entityName);
             }
+            catch (Exception ex)
+            {
+                Log.ErrorMsg("GetEntityRibbonDiffMetadataFormated");
+                Log.LogException(ex);
+                throw ex;
+            }
+        }
+
+        /// <summary>
+        /// 查询指定实体的Ribbon差异信息并格式化
+        /// </summary>
+        /// <param name="OrganizationService"></param>
+        /// <param name="entityName"></param>
+        /// <returns></returns>
+        public ResultModel GetEntityRibbonDiffMetadataFormated(IOrganizationService OrganizationService, string entityName)
+        {
+            ResultModel result = new ResultModel();
+            try
+            {
+                var metadata = (List<Entity>)GetEntityRibbonDiffMetadata(OrganizationService, entityName).data;
+
+                if (metadata != null && metadata.Any())
+                {
+                    result.Success(data: RibbonDiffMetadataFormat(metadata));
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.ErrorMsg("GetEntityRibbonDiffMetadataFormated");
+                Log.LogException(ex);
+                throw ex;
+            }
+            return result;
         }
 
         /// <summary>
@@ -594,15 +619,15 @@ namespace APIService.RetrieveEntityMetadata
         /// </summary>
         /// <param name="ec"></param>
         /// <returns></returns>
-        private List<RibbonDiff> RibbonDiffMetadataFormat(EntityCollection ec)
+        private List<RibbonDiff> RibbonDiffMetadataFormat(List<Entity> ec)
         {
             List<RibbonDiff> ribbonDiffList = new List<RibbonDiff>();
-            if (ec == null || !ec.Entities.Any()) return ribbonDiffList;
+            if (ec == null || !ec.Any()) return ribbonDiffList;
 
             // 第一趟：建立 LocLabel 索引，用于后续根据 Button/@LabelText -> $LocLabels:{id} 匹配多语言词条
             Dictionary<string, List<RibbonLocLabel>> locLabelMap = new Dictionary<string, List<RibbonLocLabel>>();
 
-            foreach (var e in ec.Entities)
+            foreach (var e in ec)
             {
                 var rdx = e.GetStringOrDefault("rdx");
                 var trimmedRdx = rdx?.TrimStart();
@@ -631,7 +656,7 @@ namespace APIService.RetrieveEntityMetadata
             }
 
             // 第二趟：构造 RibbonDiff，并在 CustomAction 中解析 Button 与对应 LocLabel
-            foreach (var e in ec.Entities)
+            foreach (var e in ec)
             {
                 RibbonDiff diff = new RibbonDiff()
                 {
@@ -716,6 +741,31 @@ namespace APIService.RetrieveEntityMetadata
             }
 
             return ribbonDiffList;
+        }
+
+        #region RibbonMetadata Functions
+        /// <summary>
+        /// 解压缩
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        private byte[] unzipRibbon(byte[] data)
+        {
+            System.IO.Packaging.ZipPackage package = null;
+            MemoryStream memStream = null;
+
+            memStream = new MemoryStream();
+            memStream.Write(data, 0, data.Length);
+            package = (ZipPackage)ZipPackage.Open(memStream, FileMode.Open);
+
+            ZipPackagePart part = (ZipPackagePart)package.GetPart(new Uri("/RibbonXml.xml", UriKind.Relative));
+            using (Stream strm = part.GetStream())
+            {
+                long len = strm.Length;
+                byte[] buff = new byte[len];
+                strm.Read(buff, 0, (int)len);
+                return buff;
+            }
         }
 
         private XmlElement TryLoadRdxRoot(string rdx)
@@ -826,6 +876,7 @@ namespace APIService.RetrieveEntityMetadata
 
             return locLabels[0]?.description ?? "";
         }
+        #endregion
     }
 
     #region GetEntityRibbonDiffMetadata

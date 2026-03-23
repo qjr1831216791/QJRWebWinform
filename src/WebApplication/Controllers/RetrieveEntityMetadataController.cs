@@ -59,13 +59,25 @@ namespace WebApplication.Controllers
         /// <summary>
         /// 查询指定实体的Ribbon差异信息
         /// </summary>
-        /// <param name="envir"></param>
-        /// <param name="entityName"></param>
+        /// <param name="envir">环境选择</param>
+        /// <param name="entityName">实体逻辑名</param>
         /// <returns></returns>
         [HttpPost]
         public virtual ResultModel GetEntityRibbonDiffMetadata(string envir, string entityName)
         {
             return Command<RetrieveEntityMetadataCommand>().GetEntityRibbonDiffMetadata(envir, entityName);
+        }
+
+        /// <summary>
+        /// 查询指定实体的Ribbon差异信息并格式化
+        /// </summary>
+        /// <param name="envir">环境选择</param>
+        /// <param name="entityName">实体逻辑名</param>
+        /// <returns></returns>
+        [HttpPost]
+        public virtual ResultModel GetEntityRibbonDiffMetadataFormated(string envir, string entityName)
+        {
+            return Command<RetrieveEntityMetadataCommand>().GetEntityRibbonDiffMetadataFormated(envir, entityName);
         }
     }
 }
